@@ -2007,54 +2007,51 @@ def home():
     latest_series_list = []
     coming_soon_movies_list = []
 
-    # is_full_page_list = False for the homepage
     is_full_page_list = False
 
     if query:
-        # Search functionality remains the same
         result = movies.find({"title": {"$regex": query, "$options": "i"}})
         movies_list = list(result)
-        is_full_page_list = True # Search results should also be vertical
+        is_full_page_list = True
+        
+        # Convert ObjectId to string for search results
+        for m in movies_list:
+            m['_id'] = str(m['_id'])
     else:
-        # Fetch data for each category on the homepage with a limit of 6
-        # Trending (quality == 'TRENDING')
+        # Fetch data for homepage sections
         trending_movies_result = movies.find({"quality": "TRENDING"}).sort('_id', -1).limit(6)
-        trending_movies_list = list(trending_movies_result)
-
-        # Latest Movies (type == 'movie', not trending, not coming soon)
         latest_movies_result = movies.find({
             "type": "movie",
             "quality": {"$ne": "TRENDING"},
             "is_coming_soon": {"$ne": True}
         }).sort('_id', -1).limit(6)
-        latest_movies_list = list(latest_movies_result)
-
-        # Latest Web Series (type == 'series', not trending, not coming soon)
         latest_series_result = movies.find({
             "type": "series",
             "quality": {"$ne": "TRENDING"},
             "is_coming_soon": {"$ne": True}
         }).sort('_id', -1).limit(6)
-        latest_series_list = list(latest_series_result)
-
-        # Coming Soon (is_coming_soon == True)
         coming_soon_result = movies.find({"is_coming_soon": True}).sort('_id', -1).limit(6)
+
+        trending_movies_list = list(trending_movies_result)
+        latest_movies_list = list(latest_movies_result)
+        latest_series_list = list(latest_series_result)
         coming_soon_movies_list = list(coming_soon_result)
 
-    # Convert ObjectIds to strings for all fetched lists
-    for m in movies_list + trending_movies_list + latest_movies_list + latest_series_list + coming_soon_movies_list:
-        m['_id'] = str(m['_id']) 
+        # Convert ObjectId to string for all lists
+        for lst in [trending_movies_list, latest_movies_list, latest_series_list, coming_soon_movies_list]:
+            for m in lst:
+                m['_id'] = str(m['_id'])
 
     return render_template_string(
         index_html, 
-        movies=movies_list, # Only used for search results or full page lists
+        movies=movies_list,
         query=query,
         trending_movies=trending_movies_list,
         latest_movies=latest_movies_list,
         latest_series=latest_series_list,
         coming_soon_movies=coming_soon_movies_list,
-        is_full_page_list=is_full_page_list, # Pass this flag to the template
-        get_active_ads=get_active_ads # Pass the function to template
+        is_full_page_list=is_full_page_list,
+        get_active_ads=get_active_ads
     )
 
 @app.route('/movie/<movie_id>')
