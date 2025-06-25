@@ -632,6 +632,48 @@ index_html = """
         </div>
       {% endif %}
 
+      {# NEW: Recently Added Section #}
+      <div class="category-header">
+        <h2>Recently Added</h2>
+        <a href="{{ url_for('recently_added_all') }}" class="see-all-btn">See All</a>
+      </div>
+      {% if recently_added|length == 0 %}
+        <p style="text-align:center; color:#999;">No recently added content found.</p>
+      {% else %}
+        <div class="grid"> {# Homepage recently added grid #}
+          {% for m in recently_added %}
+          <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
+            {% if m.poster %}
+              <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
+            {% else %}
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+                No Image
+              </div>
+            {% endif %}
+      
+            <div class="overlay-text">
+                {% if m.is_coming_soon %}
+                    <span class="label-badge coming-soon-badge">COMING SOON</span>
+                {% elif m.top_label %}
+                    <span class="label-badge custom-label">{{ m.top_label | upper }}</span>
+                {% elif m.original_language and m.original_language != 'N/A' %}
+                    <span class="label-badge">{{ m.original_language | upper }}</span>
+                {% endif %}
+                <span class="movie-top-title" title="{{ m.title }}">{{ m.title }}</span>
+            </div>
+      
+            {% if m.quality %}
+              <div class="badge {% if m.quality == 'TRENDING' %}trending{% endif %}">{{ m.quality }}</div>
+            {% endif %}
+            <div class="movie-info">
+              <h3 class="movie-title" title="{{ m.title }}">{{ m.title }}</h3>
+              <div class="movie-year">{{ m.year }}</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <div class="category-header">
         <h2>Coming Soon</h2>
         <a href="{{ url_for('coming_soon') }}" class="see-all-btn">See All</a>
@@ -1722,8 +1764,8 @@ def home():
     latest_movies_list = []
     latest_series_list = []
     coming_soon_movies_list = []
+    recently_added_list = [] # NEW: Added for Recently Added section
 
-    # is_full_page_list = False for the homepage
     is_full_page_list = False
 
     if query:
@@ -1757,8 +1799,14 @@ def home():
         coming_soon_result = movies.find({"is_coming_soon": True}).sort('_id', -1).limit(12)
         coming_soon_movies_list = list(coming_soon_result)
 
+        # NEW: Recently Added - All types of content, limited to 12
+        recently_added_result = movies.find().sort('_id', -1).limit(12)
+        recently_added_list = list(recently_added_result)
+
+
     # Convert ObjectIds to strings for all fetched lists
-    for m in movies_list + trending_movies_list + latest_movies_list + latest_series_list + coming_soon_movies_list:
+    # UPDATED: Included recently_added_list in the conversion
+    for m in movies_list + trending_movies_list + latest_movies_list + latest_series_list + coming_soon_movies_list + recently_added_list:
         m['_id'] = str(m['_id']) 
 
     return render_template_string(
@@ -1769,6 +1817,7 @@ def home():
         latest_movies=latest_movies_list,
         latest_series=latest_series_list,
         coming_soon_movies=coming_soon_movies_list,
+        recently_added=recently_added_list, # NEW: Pass the new list to template
         is_full_page_list=is_full_page_list # Pass this flag to the template
     )
 
@@ -2200,6 +2249,15 @@ def coming_soon():
     # Pass is_full_page_list=True and use 'movies' for the list
     return render_template_string(index_html, movies=coming_soon_list, query="Coming Soon to MovieZone", is_full_page_list=True)
 
+# NEW: Route for "Recently Added" full list
+@app.route('/recently_added')
+def recently_added_all():
+    all_recent_content = list(movies.find().sort('_id', -1))
+    for m in all_recent_content:
+        m['_id'] = str(m['_id'])
+    return render_template_string(index_html, movies=all_recent_content, query="Recently Added to MovieZone", is_full_page_list=True)
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
+
