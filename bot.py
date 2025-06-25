@@ -4,7 +4,6 @@ from bson.objectid import ObjectId
 import requests, os
 from functools import wraps
 from dotenv import load_dotenv
-from datetime import datetime
 
 # .env ফাইল থেকে এনভায়রনমেন্ট ভেরিয়েবল লোড করুন (শুধুমাত্র লোকাল ডেভেলপমেন্টের জন্য)
 load_dotenv()
@@ -54,7 +53,6 @@ try:
     client = MongoClient(MONGO_URI)
     db = client["movie_db"]
     movies = db["movies"]
-    ads = db["ads"]  # বিজ্ঞাপনের জন্য নতুন কালেকশন
     print("Successfully connected to MongoDB!")
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}. Exiting.")
@@ -68,25 +66,7 @@ TMDb_Genre_Map = {
     10752: "War", 37: "Western", 10751: "Family", 14: "Fantasy", 36: "History"
 }
 
-# --- বিজ্ঞাপন ব্যবস্থাপনা ফাংশন ---
-def get_active_ads(position):
-    """সক্রিয় বিজ্ঞাপন পজিশন অনুযায়ী ফেচ করে"""
-    try:
-        active_ads = list(ads.find({
-            "position": position,
-            "is_active": True
-        }).sort('created_at', -1).limit(3))
-        
-        for ad in active_ads:
-            ad['_id'] = str(ad['_id'])
-        
-        return active_ads
-    except Exception as e:
-        print(f"Error fetching ads for position {position}: {e}")
-        return []
-# --- বিজ্ঞাপন ব্যবস্থাপনা ফাংশন শেষ ---
-
-# --- START OF index_html TEMPLATE --- (বিজ্ঞাপন সেকশন সহ)
+# --- START OF index_html TEMPLATE --- (পরিবর্তিত)
 index_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -157,57 +137,6 @@ index_html = """
   input[type="search"]::placeholder {
       color: #999;
   }
-  
-  /* Ad Container Styles */
-  .ad-container {
-    width: 100%;
-    text-align: center;
-    margin: 15px 0;
-    padding: 10px;
-    background: #1f1f1f;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .ad-banner {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
-    max-height: 90px;
-    border-radius: 5px;
-  }
-  
-  .native-ad {
-    display: flex;
-    align-items: center;
-    background: #282828;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: left;
-  }
-  
-  .native-ad img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 5px;
-    margin-right: 15px;
-  }
-  
-  .native-ad-content {
-    flex-grow: 1;
-  }
-  
-  .native-ad h4 {
-    font-size: 16px;
-    margin-bottom: 5px;
-    color: #1db954;
-  }
-  
-  .native-ad p {
-    font-size: 14px;
-    color: #ccc;
-  }
 
   /* Main Content Area */
   main {
@@ -250,34 +179,14 @@ index_html = """
   /* Movie Grid and Card Styles */
   .grid {
     display: grid;
-    grid-auto-flow: column; /* Changed to flow horizontally */
-    grid-auto-columns: minmax(180px, 1fr); /* Set column width for horizontal flow */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    margin-bottom: 40px; /* Space after each grid section */
-    overflow-x: auto; /* Enable horizontal scrolling */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    scroll-snap-type: x mandatory; /* Snap to items */
-    padding-bottom: 10px; /* Add padding for scrollbar */
+    margin-bottom: 40px;
   }
 
-  /* New style for vertical grid layout (for "See All" pages) */
+  /* Style for vertical grid layout (for "See All" pages) */
   .vertical-grid {
-    grid-auto-flow: row; /* Change to flow vertically */
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* 3-5 columns on desktop */
-    overflow-x: visible; /* Disable horizontal scrolling */
-    -webkit-overflow-scrolling: auto; /* Revert scrolling */
-    scroll-snap-type: none; /* Disable snapping */
-    padding-bottom: 0; /* No extra padding for scrollbar */
-  }
-
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .grid::-webkit-scrollbar {
-    display: none;
-  }
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .grid {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 
   .movie-card {
@@ -289,8 +198,6 @@ index_html = """
     position: relative; /* Crucial for positioning child elements */
     cursor: pointer;
     border: 2px solid transparent; /* Initial transparent border for smooth transition */
-    scroll-snap-align: start; /* Snap to start of item */
-    flex-shrink: 0; /* Ensure cards don't shrink */
   }
   /* RGB border animation on hover */
   .movie-card:hover {
@@ -313,7 +220,7 @@ index_html = """
 
   .movie-poster {
     width: 100%;
-    height: 270px; /* Standard poster height - as per your request to make it larger */
+    height: 300px; /* Increased poster height */
     object-fit: cover;
     display: block;
   }
@@ -434,19 +341,16 @@ index_html = """
     .category-header .see-all-btn { padding: 6px 10px; font-size: 12px; }
 
     .grid { 
-        grid-template-columns: none; /* Disable fixed grid columns */
-        grid-auto-flow: column; /* Ensure horizontal flow */
-        grid-auto-columns: minmax(130px, 1fr); /* Slightly larger columns for mobile */
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
         margin-bottom: 30px;
     }
     .vertical-grid { /* Mobile adjustment for vertical grid */
-        grid-auto-flow: row;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* 2-3 columns on mobile */
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
     }
     .movie-card { box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .movie-poster { height: 180px; } /* Larger height for mobile posters */
+    .movie-poster { height: 220px; } /* Larger height for mobile posters */
     .movie-info { padding: 8px; background: rgba(0, 0, 0, 0.7); }
     .movie-title { font-size: 14px; margin: 0 0 2px 0; } /* Larger font for mobile */
     .movie-year { font-size: 11px; margin-bottom: 4px; }
@@ -470,42 +374,15 @@ index_html = """
     .movie-top-title {
         font-size: 13px;
     }
-    
-    .ad-container {
-        padding: 5px;
-        margin: 10px 0;
-    }
-    
-    .ad-banner {
-        max-height: 60px;
-    }
-    
-    .native-ad {
-        padding: 5px;
-    }
-    
-    .native-ad img {
-        width: 60px;
-        height: 60px;
-        margin-right: 10px;
-    }
-    
-    .native-ad h4 {
-        font-size: 14px;
-    }
-    
-    .native-ad p {
-        font-size: 12px;
-    }
   }
 
   @media (max-width: 480px) {
-      .grid { grid-auto-columns: minmax(120px,1fr); } /* Even smaller min width for very small screens */
+      .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
       .vertical-grid {
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Adjust for smaller screens */
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
           gap: 10px;
       }
-      .movie-poster { height: 160px; } /* Adjust height for very small screens */
+      .movie-poster { height: 200px; } /* Adjust height for very small screens */
   }
   /* Mobile adjustments - END */
 
@@ -547,31 +424,6 @@ index_html = """
     <input type="search" name="q" placeholder="Search movies..." value="{{ query|default('') }}" />
   </form>
 </header>
-
-{# হেডার বিজ্ঞাপন সেকশন #}
-{% set header_ads = get_active_ads('header') %}
-{% if header_ads %}
-  <div class="ad-container">
-    {% for ad in header_ads %}
-      {% if ad.type == 'banner' %}
-        <a href="{{ ad.target_url }}" target="_blank" class="ad-banner">
-          <img src="{{ ad.image_url }}" alt="{{ ad.title }}">
-        </a>
-      {% elif ad.type == 'native' %}
-        <div class="native-ad">
-          <a href="{{ ad.target_url }}" target="_blank">
-            <img src="{{ ad.image_url }}" alt="{{ ad.title }}">
-            <div class="native-ad-content">
-              <h4>{{ ad.title }}</h4>
-              <p>{{ ad.description }}</p>
-            </div>
-          </a>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
-{% endif %}
-
 <main>
   {# Conditional rendering for full list pages vs. homepage sections #}
   {% if is_full_page_list %}
@@ -588,7 +440,7 @@ index_html = """
           {% if m.poster %}
             <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
           {% else %}
-            <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+            <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
               No Image
             </div>
           {% endif %}
@@ -629,7 +481,7 @@ index_html = """
             {% if m.poster %}
               <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
             {% else %}
-              <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
                 No Image
               </div>
             {% endif %}
@@ -664,13 +516,13 @@ index_html = """
       {% if trending_movies|length == 0 %}
         <p style="text-align:center; color:#999;">No trending movies found.</p>
       {% else %}
-        <div class="grid"> {# Homepage trending grid remains horizontal #}
+        <div class="grid"> {# Homepage trending grid #}
           {% for m in trending_movies %}
           <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
             {% if m.poster %}
               <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
             {% else %}
-              <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
                 No Image
               </div>
             {% endif %}
@@ -705,13 +557,13 @@ index_html = """
       {% if latest_movies|length == 0 %}
         <p style="text-align:center; color:#999;">No movies found.</p>
       {% else %}
-        <div class="grid"> {# Homepage latest movies grid remains horizontal #}
+        <div class="grid"> {# Homepage latest movies grid #}
           {% for m in latest_movies %}
           <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
             {% if m.poster %}
               <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
             {% else %}
-              <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
                 No Image
               </div>
             {% endif %}
@@ -746,13 +598,13 @@ index_html = """
       {% if latest_series|length == 0 %}
         <p style="text-align:center; color:#999;">No TV series or web series found.</p>
       {% else %}
-        <div class="grid"> {# Homepage latest series grid remains horizontal #}
+        <div class="grid"> {# Homepage latest series grid #}
           {% for m in latest_series %}
           <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
             {% if m.poster %}
               <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
             {% else %}
-              <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
                 No Image
               </div>
             {% endif %}
@@ -787,13 +639,13 @@ index_html = """
       {% if coming_soon_movies|length == 0 %}
         <p style="text-align:center; color:#999;">No upcoming movies found.</p>
       {% else %}
-        <div class="grid"> {# Homepage coming soon grid remains horizontal #}
+        <div class="grid"> {# Homepage coming soon grid #}
           {% for m in coming_soon_movies %}
           <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
             {% if m.poster %}
               <img class="movie-poster" src="{{ m.poster }}" alt="{{ m.title }}">
             {% else %}
-              <div style="height:270px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
+              <div style="height:300px; background:#333; display:flex;align-items:center;justify-content:center;color:#777;">
                 No Image
               </div>
             {% endif %}
@@ -845,7 +697,7 @@ index_html = """
 # --- END OF index_html TEMPLATE ---
 
 
-# --- START OF detail_html TEMPLATE --- (বিজ্ঞাপন সেকশন সহ)
+# --- START OF detail_html TEMPLATE --- (কোন পরিবর্তন নেই)
 detail_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -864,7 +716,7 @@ detail_html = """
     position: sticky; top: 0; left: 0; right: 0;
     background: #181818; padding: 10px 20px;
     display: flex; justify-content: flex-start; align-items: center; z-index: 100;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.8);
   }
   header h1 {
     margin: 0; font-weight: 700; font-size: 24px;
@@ -885,57 +737,6 @@ detail_html = """
       z-index: 101;
   }
   .back-button i { margin-right: 5px; }
-  
-  /* Ad Container Styles */
-  .ad-container {
-    width: 100%;
-    text-align: center;
-    margin: 15px 0;
-    padding: 10px;
-    background: #1f1f1f;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .ad-banner {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
-    max-height: 90px;
-    border-radius: 5px;
-  }
-  
-  .native-ad {
-    display: flex;
-    align-items: center;
-    background: #282828;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: left;
-  }
-  
-  .native-ad img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 5px;
-    margin-right: 15px;
-  }
-  
-  .native-ad-content {
-    flex-grow: 1;
-  }
-  
-  .native-ad h4 {
-    font-size: 16px;
-    margin-bottom: 5px;
-    color: #1db954;
-  }
-  
-  .native-ad p {
-    font-size: 14px;
-    color: #ccc;
-  }
 
   /* Detail Page Specific Styles */
   .movie-detail-container {
@@ -1136,33 +937,6 @@ detail_html = """
     .download-section h3::after { font-size: 18px; }
     .download-quality-info { font-size: 16px; }
     .download-button { font-size: 16px; padding: 10px 15px; }
-    
-    .ad-container {
-        padding: 5px;
-        margin: 10px 0;
-    }
-    
-    .ad-banner {
-        max-height: 60px;
-    }
-    
-    .native-ad {
-        padding: 5px;
-    }
-    
-    .native-ad img {
-        width: 60px;
-        height: 60px;
-        margin-right: 10px;
-    }
-    
-    .native-ad h4 {
-        font-size: 14px;
-    }
-    
-    .native-ad p {
-        font-size: 12px;
-    }
   }
 
   @media (max-width: 480px) {
@@ -1201,31 +975,6 @@ detail_html = """
   <a href="{{ url_for('home') }}" class="back-button"><i class="fas fa-arrow-left"></i>Back</a>
   <h1>MovieZone</h1>
 </header>
-
-{# হেডার বিজ্ঞাপন সেকশন #}
-{% set header_ads = get_active_ads('header') %}
-{% if header_ads %}
-  <div class="ad-container">
-    {% for ad in header_ads %}
-      {% if ad.type == 'banner' %}
-        <a href="{{ ad.target_url }}" target="_blank" class="ad-banner">
-          <img src="{{ ad.image_url }}" alt="{{ ad.title }}">
-        </a>
-      {% elif ad.type == 'native' %}
-        <div class="native-ad">
-          <a href="{{ ad.target_url }}" target="_blank">
-            <img src="{{ ad.image_url }}" alt="{{ ad.title }}">
-            <div class="native-ad-content">
-              <h4>{{ ad.title }}</h4>
-              <p>{{ ad.description }}</p>
-            </div>
-          </a>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
-{% endif %}
-
 <main>
   {% if movie %}
   <div class="movie-detail-container">
@@ -1595,12 +1344,6 @@ admin_html = """
     <p style="text-align:center; color:#999;">No content found in the database.</p>
     {% endif %}
   </div>
-  
-  <div style="margin-top: 40px; text-align: center;">
-    <a href="{{ url_for('ad_admin') }}" style="background: #8a2be2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; display: inline-block;">
-      Manage Advertisements
-    </a>
-  </div>
 
   <script>
     function confirmDelete(movieId, movieTitle) {
@@ -1969,450 +1712,6 @@ edit_html = """
 """
 # --- END OF edit_html TEMPLATE ---
 
-# --- বিজ্ঞাপন এডমিন প্যানেল টেমপ্লেট ---
-ad_admin_html = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Ad Management - MovieZone</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-    h2 { 
-      background: linear-gradient(270deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradientShift 10s ease infinite;
-      display: inline-block;
-      font-size: 28px;
-      margin-bottom: 20px;
-    }
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    form { max-width: 600px; margin-bottom: 40px; border: 1px solid #333; padding: 20px; border-radius: 8px;}
-    
-    .form-group {
-        margin-bottom: 15px;
-    }
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #ddd;
-    }
-    input[type="text"], input[type="url"], textarea, button, select, input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
-      background: #222;
-      color: #eee;
-    }
-    input[type="checkbox"] {
-        width: auto;
-        margin-right: 10px;
-    }
-    textarea {
-        resize: vertical;
-        min-height: 80px;
-    }
-
-    button {
-      background: #1db954;
-      color: #000;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: #17a34a;
-    }
-    .back-to-admin {
-        display: inline-block;
-        margin-bottom: 20px;
-        color: #1db954;
-        text-decoration: none;
-        font-weight: bold;
-    }
-    .back-to-admin:hover {
-        text-decoration: underline;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    th, td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid #333;
-    }
-    th {
-        background: #282828;
-        color: #eee;
-    }
-    td {
-        background: #181818;
-    }
-    .action-buttons {
-        display: flex;
-        gap: 5px;
-    }
-    .delete-btn {
-        background: #e44d26;
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        border: none;
-        cursor: pointer;
-        transition: background 0.3s ease;
-        font-size: 14px;
-        width: auto;
-        margin-bottom: 0;
-    }
-    .delete-btn:hover {
-        background: #d43d16;
-    }
-    .edit-btn {
-        background: #007bff;
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-size: 14px;
-        width: auto;
-        margin-bottom: 0;
-        display: inline-block;
-        transition: background 0.3s ease;
-    }
-    .edit-btn:hover {
-        background: #0056b3;
-    }
-    .ad-preview {
-        max-width: 300px;
-        margin: 10px 0;
-        border: 1px solid #444;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    .ad-preview img {
-        max-width: 100%;
-        display: block;
-        margin-bottom: 10px;
-    }
-    .active-status {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 5px;
-    }
-    .active-status.active {
-        background-color: #1db954;
-    }
-    .active-status.inactive {
-        background-color: #e44d26;
-    }
-  </style>
-</head>
-<body>
-  <a href="{{ url_for('admin') }}" class="back-to-admin">&larr; Back to Main Admin</a>
-  <h2>Manage Advertisements</h2>
-  
-  <h3>Add New Advertisement</h3>
-  <form method="post" action="/ad_admin">
-    <div class="form-group">
-        <label for="ad_title">Ad Title (Internal):</label>
-        <input type="text" name="ad_title" id="ad_title" placeholder="Name for internal reference" required />
-    </div>
-    
-    <div class="form-group">
-        <label for="ad_type">Ad Type:</label>
-        <select name="ad_type" id="ad_type" onchange="toggleAdFields()">
-            <option value="banner">Banner Ad</option>
-            <option value="interstitial">Interstitial Ad</option>
-            <option value="native">Native Ad</option>
-        </select>
-    </div>
-    
-    <div class="form-group" id="banner_fields">
-        <label for="banner_image">Banner Image URL:</label>
-        <input type="url" name="banner_image" id="banner_image" placeholder="https://example.com/ad-banner.jpg" />
-        <label for="banner_link">Banner Target URL:</label>
-        <input type="url" name="banner_link" id="banner_link" placeholder="https://example.com" />
-    </div>
-    
-    <div class="form-group" id="interstitial_fields" style="display: none;">
-        <label for="interstitial_image">Interstitial Image URL:</label>
-        <input type="url" name="interstitial_image" id="interstitial_image" placeholder="https://example.com/fullscreen-ad.jpg" />
-        <label for="interstitial_link">Interstitial Target URL:</label>
-        <input type="url" name="interstitial_link" id="interstitial_link" placeholder="https://example.com" />
-    </div>
-    
-    <div class="form-group" id="native_fields" style="display: none;">
-        <label for="native_title">Native Ad Title:</label>
-        <input type="text" name="native_title" id="native_title" placeholder="Advertisement Title" />
-        <label for="native_description">Native Ad Description:</label>
-        <textarea name="native_description" id="native_description" placeholder="Advertisement description"></textarea>
-        <label for="native_image">Native Image URL:</label>
-        <input type="url" name="native_image" id="native_image" placeholder="https://example.com/native-ad.jpg" />
-        <label for="native_link">Native Target URL:</label>
-        <input type="url" name="native_link" id="native_link" placeholder="https://example.com" />
-    </div>
-    
-    <div class="form-group">
-        <label for="ad_position">Ad Position:</label>
-        <select name="ad_position" id="ad_position">
-            <option value="header">Header (Top of page)</option>
-            <option value="middle">Middle of Content</option>
-            <option value="footer">Footer (Above navigation)</option>
-            <option value="sidebar">Sidebar (If available)</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <input type="checkbox" name="is_active" id="is_active" value="true" checked>
-        <label for="is_active" style="display: inline-block;">Active</label>
-    </div>
-    
-    <button type="submit">Add Advertisement</button>
-  </form>
-  
-  <h3>Existing Advertisements</h3>
-  {% if ads %}
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Type</th>
-        <th>Position</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ad in ads %}
-      <tr>
-        <td>{{ ad.title }}</td>
-        <td>{{ ad.type | title }}</td>
-        <td>{{ ad.position | title }}</td>
-        <td>
-          <span class="active-status {% if ad.is_active %}active{% else %}inactive{% endif %}"></span>
-          {% if ad.is_active %}Active{% else %}Inactive{% endif %}
-        </td>
-        <td class="action-buttons">
-          <a href="/edit_ad/{{ ad._id }}" class="edit-btn">Edit</a>
-          <button class="delete-btn" onclick="confirmDelete('{{ ad._id }}', '{{ ad.title }}')">Delete</button>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p style="text-align:center; color:#999;">No advertisements found.</p>
-  {% endif %}
-  
-  <script>
-    function toggleAdFields() {
-        var adType = document.getElementById('ad_type').value;
-        
-        // Hide all fields first
-        document.getElementById('banner_fields').style.display = 'none';
-        document.getElementById('interstitial_fields').style.display = 'none';
-        document.getElementById('native_fields').style.display = 'none';
-        
-        // Show relevant fields
-        if (adType === 'banner') {
-            document.getElementById('banner_fields').style.display = 'block';
-        } else if (adType === 'interstitial') {
-            document.getElementById('interstitial_fields').style.display = 'block';
-        } else if (adType === 'native') {
-            document.getElementById('native_fields').style.display = 'block';
-        }
-    }
-    
-    function confirmDelete(adId, adTitle) {
-        if (confirm('Are you sure you want to delete "' + adTitle + '"?')) {
-            window.location.href = '/delete_ad/' + adId;
-        }
-    }
-    
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', toggleAdFields);
-  </script>
-</body>
-</html>
-"""
-# --- END OF ad_admin_html TEMPLATE ---
-
-# --- START OF edit_ad_html TEMPLATE ---
-edit_ad_html = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Edit Advertisement - MovieZone</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-    h2 { 
-      background: linear-gradient(270deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradientShift 10s ease infinite;
-      display: inline-block;
-      font-size: 28px;
-      margin-bottom: 20px;
-    }
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    form { max-width: 600px; margin-bottom: 40px; border: 1px solid #333; padding: 20px; border-radius: 8px;}
-    
-    .form-group {
-        margin-bottom: 15px;
-    }
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #ddd;
-    }
-    input[type="text"], input[type="url"], textarea, button, select, input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
-      background: #222;
-      color: #eee;
-    }
-    input[type="checkbox"] {
-        width: auto;
-        margin-right: 10px;
-    }
-    textarea {
-        resize: vertical;
-        min-height: 80px;
-    }
-
-    button {
-      background: #1db954;
-      color: #000;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: #17a34a;
-    }
-    .back-to-admin {
-        display: inline-block;
-        margin-bottom: 20px;
-        color: #1db954;
-        text-decoration: none;
-        font-weight: bold;
-    }
-    .back-to-admin:hover {
-        text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <a href="{{ url_for('ad_admin') }}" class="back-to-admin">&larr; Back to Ad Management</a>
-  <h2>Edit Advertisement: {{ ad.title }}</h2>
-  <form method="post">
-    <div class="form-group">
-        <label for="ad_title">Ad Title (Internal):</label>
-        <input type="text" name="ad_title" id="ad_title" placeholder="Name for internal reference" value="{{ ad.title }}" required />
-    </div>
-    
-    <div class="form-group">
-        <label for="ad_type">Ad Type:</label>
-        <select name="ad_type" id="ad_type" onchange="toggleAdFields()">
-            <option value="banner" {% if ad.type == 'banner' %}selected{% endif %}>Banner Ad</option>
-            <option value="interstitial" {% if ad.type == 'interstitial' %}selected{% endif %}>Interstitial Ad</option>
-            <option value="native" {% if ad.type == 'native' %}selected{% endif %}>Native Ad</option>
-        </select>
-    </div>
-    
-    <div class="form-group" id="banner_fields" {% if ad.type != 'banner' %}style="display: none;"{% endif %}>
-        <label for="banner_image">Banner Image URL:</label>
-        <input type="url" name="banner_image" id="banner_image" placeholder="https://example.com/ad-banner.jpg" value="{{ ad.image_url if ad.type == 'banner' else '' }}" />
-        <label for="banner_link">Banner Target URL:</label>
-        <input type="url" name="banner_link" id="banner_link" placeholder="https://example.com" value="{{ ad.target_url if ad.type == 'banner' else '' }}" />
-    </div>
-    
-    <div class="form-group" id="interstitial_fields" {% if ad.type != 'interstitial' %}style="display: none;"{% endif %}>
-        <label for="interstitial_image">Interstitial Image URL:</label>
-        <input type="url" name="interstitial_image" id="interstitial_image" placeholder="https://example.com/fullscreen-ad.jpg" value="{{ ad.image_url if ad.type == 'interstitial' else '' }}" />
-        <label for="interstitial_link">Interstitial Target URL:</label>
-        <input type="url" name="interstitial_link" id="interstitial_link" placeholder="https://example.com" value="{{ ad.target_url if ad.type == 'interstitial' else '' }}" />
-    </div>
-    
-    <div class="form-group" id="native_fields" {% if ad.type != 'native' %}style="display: none;"{% endif %}>
-        <label for="native_title">Native Ad Title:</label>
-        <input type="text" name="native_title" id="native_title" placeholder="Advertisement Title" value="{{ ad.title if ad.type == 'native' else '' }}" />
-        <label for="native_description">Native Ad Description:</label>
-        <textarea name="native_description" id="native_description" placeholder="Advertisement description">{% if ad.type == 'native' %}{{ ad.description }}{% endif %}</textarea>
-        <label for="native_image">Native Image URL:</label>
-        <input type="url" name="native_image" id="native_image" placeholder="https://example.com/native-ad.jpg" value="{{ ad.image_url if ad.type == 'native' else '' }}" />
-        <label for="native_link">Native Target URL:</label>
-        <input type="url" name="native_link" id="native_link" placeholder="https://example.com" value="{{ ad.target_url if ad.type == 'native' else '' }}" />
-    </div>
-    
-    <div class="form-group">
-        <label for="ad_position">Ad Position:</label>
-        <select name="ad_position" id="ad_position">
-            <option value="header" {% if ad.position == 'header' %}selected{% endif %}>Header (Top of page)</option>
-            <option value="middle" {% if ad.position == 'middle' %}selected{% endif %}>Middle of Content</option>
-            <option value="footer" {% if ad.position == 'footer' %}selected{% endif %}>Footer (Above navigation)</option>
-            <option value="sidebar" {% if ad.position == 'sidebar' %}selected{% endif %}>Sidebar (If available)</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <input type="checkbox" name="is_active" id="is_active" value="true" {% if ad.is_active %}checked{% endif %}>
-        <label for="is_active" style="display: inline-block;">Active</label>
-    </div>
-    
-    <button type="submit">Update Advertisement</button>
-  </form>
-  
-  <script>
-    function toggleAdFields() {
-        var adType = document.getElementById('ad_type').value;
-        
-        // Hide all fields first
-        document.getElementById('banner_fields').style.display = 'none';
-        document.getElementById('interstitial_fields').style.display = 'none';
-        document.getElementById('native_fields').style.display = 'none';
-        
-        // Show relevant fields
-        if (adType === 'banner') {
-            document.getElementById('banner_fields').style.display = 'block';
-        } else if (adType === 'interstitial') {
-            document.getElementById('interstitial_fields').style.display = 'block';
-        } else if (adType === 'native') {
-            document.getElementById('native_fields').style.display = 'block';
-        }
-    }
-    
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', toggleAdFields);
-  </script>
-</body>
-</html>
-"""
-# --- END OF edit_ad_html TEMPLATE ---
-
 
 @app.route('/')
 def home():
@@ -2433,9 +1732,9 @@ def home():
         movies_list = list(result)
         is_full_page_list = True # Search results should also be vertical
     else:
-        # Fetch data for each category on the homepage with a limit of 6
+        # Fetch data for each category on the homepage with a limit of 12
         # Trending (quality == 'TRENDING')
-        trending_movies_result = movies.find({"quality": "TRENDING"}).sort('_id', -1).limit(6)
+        trending_movies_result = movies.find({"quality": "TRENDING"}).sort('_id', -1).limit(12)
         trending_movies_list = list(trending_movies_result)
 
         # Latest Movies (type == 'movie', not trending, not coming soon)
@@ -2443,7 +1742,7 @@ def home():
             "type": "movie",
             "quality": {"$ne": "TRENDING"},
             "is_coming_soon": {"$ne": True}
-        }).sort('_id', -1).limit(6)
+        }).sort('_id', -1).limit(12)
         latest_movies_list = list(latest_movies_result)
 
         # Latest Web Series (type == 'series', not trending, not coming soon)
@@ -2451,11 +1750,11 @@ def home():
             "type": "series",
             "quality": {"$ne": "TRENDING"},
             "is_coming_soon": {"$ne": True}
-        }).sort('_id', -1).limit(6)
+        }).sort('_id', -1).limit(12)
         latest_series_list = list(latest_series_result)
 
         # Coming Soon (is_coming_soon == True)
-        coming_soon_result = movies.find({"is_coming_soon": True}).sort('_id', -1).limit(6)
+        coming_soon_result = movies.find({"is_coming_soon": True}).sort('_id', -1).limit(12)
         coming_soon_movies_list = list(coming_soon_result)
 
     # Convert ObjectIds to strings for all fetched lists
@@ -2470,8 +1769,7 @@ def home():
         latest_movies=latest_movies_list,
         latest_series=latest_series_list,
         coming_soon_movies=coming_soon_movies_list,
-        is_full_page_list=is_full_page_list, # Pass this flag to the template
-        get_active_ads=get_active_ads # Pass the function to template
+        is_full_page_list=is_full_page_list # Pass this flag to the template
     )
 
 @app.route('/movie/<movie_id>')
@@ -2559,10 +1857,10 @@ def movie_detail(movie_id):
             else:
                 print("Skipping TMDb API call for movie details (not a movie, no key, or data already present).")
 
-        return render_template_string(detail_html, movie=movie, get_active_ads=get_active_ads)
+        return render_template_string(detail_html, movie=movie)
     except Exception as e:
         print(f"Error fetching movie detail for ID {movie_id}: {e}")
-        return render_template_string(detail_html, movie=None, get_active_ads=get_active_ads)
+        return render_template_string(detail_html, movie=None)
 
 @app.route('/admin', methods=["GET", "POST"])
 @requires_auth # অথেন্টিকেশন ডেকোরেটর যোগ করা হয়েছে
@@ -2876,7 +2174,7 @@ def trending_movies():
     for m in trending_list:
         m['_id'] = str(m['_id'])
     # Pass is_full_page_list=True and use 'movies' for the list
-    return render_template_string(index_html, movies=trending_list, query="Trending on MovieZone", is_full_page_list=True, get_active_ads=get_active_ads)
+    return render_template_string(index_html, movies=trending_list, query="Trending on MovieZone", is_full_page_list=True)
 
 @app.route('/movies_only')
 def movies_only():
@@ -2884,7 +2182,7 @@ def movies_only():
     for m in movie_list:
         m['_id'] = str(m['_id'])
     # Pass is_full_page_list=True and use 'movies' for the list
-    return render_template_string(index_html, movies=movie_list, query="All Movies on MovieZone", is_full_page_list=True, get_active_ads=get_active_ads)
+    return render_template_string(index_html, movies=movie_list, query="All Movies on MovieZone", is_full_page_list=True)
 
 @app.route('/webseries')
 def webseries():
@@ -2892,7 +2190,7 @@ def webseries():
     for m in series_list:
         m['_id'] = str(m['_id'])
     # Pass is_full_page_list=True and use 'movies' for the list
-    return render_template_string(index_html, movies=series_list, query="All Web Series on MovieZone", is_full_page_list=True, get_active_ads=get_active_ads)
+    return render_template_string(index_html, movies=series_list, query="All Web Series on MovieZone", is_full_page_list=True)
 
 @app.route('/coming_soon')
 def coming_soon():
@@ -2900,119 +2198,7 @@ def coming_soon():
     for m in coming_soon_list:
         m['_id'] = str(m['_id'])
     # Pass is_full_page_list=True and use 'movies' for the list
-    return render_template_string(index_html, movies=coming_soon_list, query="Coming Soon to MovieZone", is_full_page_list=True, get_active_ads=get_active_ads)
-
-# --- বিজ্ঞাপন ব্যবস্থাপনা রুট ---
-@app.route('/ad_admin', methods=["GET", "POST"])
-@requires_auth
-def ad_admin():
-    if request.method == "POST":
-        # ফর্ম ডেটা সংগ্রহ
-        ad_title = request.form.get("ad_title")
-        ad_type = request.form.get("ad_type")
-        ad_position = request.form.get("ad_position")
-        is_active = request.form.get("is_active") == "true"
-        
-        ad_data = {
-            "title": ad_title,
-            "type": ad_type,
-            "position": ad_position,
-            "is_active": is_active,
-            "created_at": datetime.utcnow()
-        }
-        
-        # বিজ্ঞাপনের ধরণ অনুযায়ী ডেটা সংগ্রহ
-        if ad_type == "banner":
-            ad_data["image_url"] = request.form.get("banner_image")
-            ad_data["target_url"] = request.form.get("banner_link")
-        elif ad_type == "interstitial":
-            ad_data["image_url"] = request.form.get("interstitial_image")
-            ad_data["target_url"] = request.form.get("interstitial_link")
-        elif ad_type == "native":
-            ad_data["title"] = request.form.get("native_title") or ad_title
-            ad_data["description"] = request.form.get("native_description")
-            ad_data["image_url"] = request.form.get("native_image")
-            ad_data["target_url"] = request.form.get("native_link")
-        
-        try:
-            ads.insert_one(ad_data)
-            print(f"Advertisement '{ad_title}' added successfully!")
-            return redirect(url_for('ad_admin'))
-        except Exception as e:
-            print(f"Error inserting ad into MongoDB: {e}")
-            return redirect(url_for('ad_admin'))
-    
-    # GET রিকোয়েস্টের জন্য বিজ্ঞাপন লিস্ট দেখান
-    all_ads = list(ads.find().sort('created_at', -1))
-    for ad in all_ads:
-        ad['_id'] = str(ad['_id'])
-    
-    return render_template_string(ad_admin_html, ads=all_ads)
-
-# বিজ্ঞাপন এডিট রুট
-@app.route('/edit_ad/<ad_id>', methods=["GET", "POST"])
-@requires_auth
-def edit_ad(ad_id):
-    try:
-        ad = ads.find_one({"_id": ObjectId(ad_id)})
-        if not ad:
-            return "Ad not found!", 404
-        
-        if request.method == "POST":
-            # আপডেটেড ডেটা সংগ্রহ
-            ad_title = request.form.get("ad_title")
-            ad_type = request.form.get("ad_type")
-            ad_position = request.form.get("ad_position")
-            is_active = request.form.get("is_active") == "true"
-            
-            update_data = {
-                "title": ad_title,
-                "type": ad_type,
-                "position": ad_position,
-                "is_active": is_active,
-                "updated_at": datetime.utcnow()
-            }
-            
-            # বিজ্ঞাপনের ধরণ অনুযায়ী ডেটা আপডেট
-            if ad_type == "banner":
-                update_data["image_url"] = request.form.get("banner_image")
-                update_data["target_url"] = request.form.get("banner_link")
-            elif ad_type == "interstitial":
-                update_data["image_url"] = request.form.get("interstitial_image")
-                update_data["target_url"] = request.form.get("interstitial_link")
-            elif ad_type == "native":
-                update_data["title"] = request.form.get("native_title") or ad_title
-                update_data["description"] = request.form.get("native_description")
-                update_data["image_url"] = request.form.get("native_image")
-                update_data["target_url"] = request.form.get("native_link")
-            
-            # MongoDB-তে আপডেট
-            ads.update_one({"_id": ObjectId(ad_id)}, {"$set": update_data})
-            return redirect(url_for('ad_admin'))
-        
-        # GET রিকোয়েস্টের জন্য এডিট ফর্ম দেখান
-        ad['_id'] = str(ad['_id'])
-        return render_template_string(edit_ad_html, ad=ad)
-    
-    except Exception as e:
-        print(f"Error processing edit for ad ID {ad_id}: {e}")
-        return "An error occurred during editing.", 500
-
-# বিজ্ঞাপন ডিলিট রুট
-@app.route('/delete_ad/<ad_id>')
-@requires_auth
-def delete_ad(ad_id):
-    try:
-        result = ads.delete_one({"_id": ObjectId(ad_id)})
-        if result.deleted_count == 1:
-            print(f"Ad with ID {ad_id} deleted successfully!")
-        else:
-            print(f"Ad with ID {ad_id} not found.")
-    except Exception as e:
-        print(f"Error deleting ad with ID {ad_id}: {e}")
-    
-    return redirect(url_for('ad_admin'))
-# --- বিজ্ঞাপন ব্যবস্থাপনা রুট শেষ ---
+    return render_template_string(index_html, movies=coming_soon_list, query="Coming Soon to MovieZone", is_full_page_list=True)
 
 
 if __name__ == "__main__":
