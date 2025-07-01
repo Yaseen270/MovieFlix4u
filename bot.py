@@ -66,7 +66,7 @@ TMDb_Genre_Map = {
     10752: "War", 37: "Western", 10751: "Family", 14: "Fantasy", 36: "History"
 }
 
-# --- START OF index_html TEMPLATE --- (পরিবর্তিত)
+# --- START OF index_html TEMPLATE (UPDATED WITH NEW CSS) ---
 index_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -75,6 +75,9 @@ index_html = """
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>MovieZone - Your Entertainment Hub</title>
 <style>
+  /* Google Fonts Import */
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@300;400;700&display=swap');
+
   /* Reset & basics */
   * {
     box-sizing: border-box;
@@ -82,11 +85,37 @@ index_html = """
     padding: 0;
   }
   body {
+    font-family: 'Roboto', sans-serif; /* সাধারণ টেক্সটের জন্য */
     background: #121212; /* Dark background */
     color: #eee;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden; /* অনুভূমিক স্ক্রলবার প্রতিরোধ */
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif; /* শিরোনামের জন্য */
+    color: #fff;
+  }
+
+  /* Custom Scrollbar for Webkit browsers (Chrome, Safari) */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #282828;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+  }
+
   a { text-decoration: none; color: inherit; }
   a:hover { color: #1db954; } /* Adjusted hover color */
   
@@ -123,19 +152,25 @@ index_html = """
     flex-grow: 1;
     margin-left: 20px; /* Space between title and search */
   }
-  input[type="search"] {
-    width: 100%;
-    max-width: 400px;
-    padding: 8px 12px;
-    border-radius: 30px;
-    border: none;
-    font-size: 16px;
-    outline: none;
-    background: #fff;
-    color: #333;
+  .search-input {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px 15px;
+      border: 1px solid #333;
+      border-radius: 25px; /* আরও গোলাকার */
+      background-color: #181818;
+      color: #e0e0e0;
+      font-size: 1em;
+      outline: none; /* ডিফল্ট আউটলাইন সরান */
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); /* হালকা ইনসেট শ্যাডো */
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  input[type="search"]::placeholder {
-      color: #999;
+  .search-input::placeholder {
+      color: #888;
+  }
+  .search-input:focus {
+      border-color: #1db954; /* ফোকাসে অ্যাকসেন্ট কালার */
+      box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.4); /* গ্লো ইফেক্ট */
   }
 
   /* Main Content Area */
@@ -190,23 +225,25 @@ index_html = """
   }
 
   .movie-card {
-    background: #181818; /* Dark card background */
-    border-radius: 8px;
+    background-color: #1f1f1f;
+    border-radius: 12px; /* সামান্য বেশি গোলাকার */
     overflow: hidden;
-    box-shadow: 0 0 8px rgba(0,0,0,0.6);
-    transition: transform 0.2s ease;
-    position: relative; /* Crucial for positioning child elements */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* হালকা, বিস্তৃত শ্যাডো */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* মসৃণ ট্রানজিশন */
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* movie-info এর জন্য */
     border: 2px solid transparent; /* Initial transparent border for smooth transition */
   }
   /* RGB border animation on hover */
   .movie-card:hover {
-    transform: scale(1.05); /* Slight zoom on hover */
+    transform: translateY(-5px); /* উপরের দিকে সামান্য ওঠে */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6); /* হোভারে আরও গভীর শ্যাডো */
     /* RGB Border Gradient Animation */
     border: 2px solid;
     border-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) 1;
     animation: rgbBorder 3s linear infinite; /* Animates the border gradient */
-    box-shadow: 0 0 15px rgba(0,0,0,0.8); /* Maintain shadow on hover */
   }
   @keyframes rgbBorder {
     0% { border-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) 1; }
@@ -226,12 +263,15 @@ index_html = """
   }
   .movie-info {
     padding: 10px;
-    background: rgba(0, 0, 0, 0.7); /* Translucent background for text */
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.5)); /* হালকা গ্রেডিয়েন্ট */
     position: absolute; /* Position over the poster */
     bottom: 0;
     left: 0;
     right: 0;
     text-align: center; /* Center text */
+    box-sizing: border-box;
+    border-bottom-left-radius: 12px; /* কার্ডের সাথে সামঞ্জস্যপূর্ণ */
+    border-bottom-right-radius: 12px;
   }
   .movie-title {
     font-size: 18px;
@@ -396,18 +436,39 @@ index_html = """
     z-index: 200;
   }
   .nav-item {
-    display: flex; flex-direction: column; align-items: center;
     color: #ccc; /* Default color for icons/text */
-    font-size: 12px;
-    text-align: center;
-    transition: color 0.2s ease;
-  }
-  .nav-item:hover, .nav-item.active { /* Active state for Home */
-    color: #e44d26; /* Orange color for active/hover */
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75em; /* টেক্সটের আকার একটু ছোট */
+    transition: color 0.3s ease;
+    padding: 5px 0; /* প্যাডিং যোগ করুন */
+    position: relative; /* ইন্ডিকেটরের জন্য */
   }
   .nav-item i {
-    font-size: 24px;
-    margin-bottom: 4px;
+    font-size: 1.5em; /* আইকনের আকার */
+    margin-bottom: 5px;
+  }
+  .nav-item.active { /* Active state for Home */
+    color: #1db954; /* আপনার অ্যাকসেন্ট কালার */
+  }
+  .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; /* বাটন বারের নিচে */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 25px; /* ছোট লাইনের চওড়া */
+      height: 3px;
+      background-color: #1db954;
+      border-radius: 2px;
+      transition: width 0.3s ease; /* ট্রানজিশন যোগ করুন */
+  }
+
+  /* হোভার ইফেক্ট */
+  .nav-item:hover {
+      color: #bbb; /* হোভারে হালকা উজ্জ্বলতা */
   }
   @media (max-width: 768px) {
       .bottom-nav { padding: 8px 0; }
@@ -421,7 +482,7 @@ index_html = """
 <header>
   <h1>MovieZone</h1>
   <form method="GET" action="/">
-    <input type="search" name="q" placeholder="Search movies..." value="{{ query|default('') }}" />
+    <input type="search" name="q" class="search-input" placeholder="Search movies..." value="{{ query|default('') }}" />
   </form>
 </header>
 <main>
@@ -1119,7 +1180,7 @@ detail_html = """
 # --- END OF detail_html TEMPLATE ---
 
 
-# --- START OF admin_html TEMPLATE --- (সার্চ ফর্ম সহ নতুন কোড)
+# --- START OF admin_html TEMPLATE (সার্চ ফর্ম সহ নতুন কোড)
 admin_html = """
 <!DOCTYPE html>
 <html>
@@ -1828,18 +1889,21 @@ def movie_detail(movie_id):
         if movie:
             movie['_id'] = str(movie['_id'])
             
-            # Fetch additional details from TMDb if API key is available
-            # Only fetch if tmdb_id is not already present or if the existing poster/overview are default values.
-            # AND if it's a movie (TMDb episode details are more complex)
-            should_fetch_tmdb = TMDB_API_KEY and (not movie.get("tmdb_id") or movie.get("overview") == "No overview available." or not movie.get("poster")) and movie.get("type") == "movie"
+            # Determine TMDb search type based on content type
+            tmdb_search_type = "movie" if movie.get("type") == "movie" else "tv"
+            
+            # Only fetch if TMDb API key is available and some crucial info is missing or default
+            should_fetch_tmdb = TMDB_API_KEY and (
+                not movie.get("tmdb_id") or 
+                movie.get("overview") == "No overview available." or 
+                not movie.get("poster")
+            )
 
             if should_fetch_tmdb:
                 tmdb_id = movie.get("tmdb_id") 
                 
                 # If TMDb ID is not stored, search by title first
                 if not tmdb_id:
-                    # Decide whether to search as movie or tv based on 'type' field
-                    tmdb_search_type = "movie" if movie.get("type") == "movie" else "tv" # Will only be 'movie' due to should_fetch_tmdb
                     search_url = f"https://api.themoviedb.org/3/search/{tmdb_search_type}?api_key={TMDB_API_KEY}&query={movie['title']}"
                     try:
                         search_res = requests.get(search_url, timeout=5).json()
@@ -1849,7 +1913,7 @@ def movie_detail(movie_id):
                             movies.update_one({"_id": ObjectId(movie_id)}, {"$set": {"tmdb_id": tmdb_id}})
                         else:
                             print(f"No search results found on TMDb for title: {movie['title']} ({tmdb_search_type})")
-                            tmdb_id = None # Ensure tmdb_id is None if no search results
+                            tmdb_id = None
                     except requests.exceptions.RequestException as e:
                         print(f"Error connecting to TMDb API for search '{movie['title']}': {e}")
                         tmdb_id = None
@@ -1859,36 +1923,54 @@ def movie_detail(movie_id):
 
                 # If TMDb ID is found (either from DB or search), fetch full details
                 if tmdb_id:
-                    tmdb_detail_type = "movie" # Always movie if should_fetch_tmdb is true
-                    tmdb_detail_url = f"https://api.themoviedb.org/3/{tmdb_detail_type}/{tmdb_id}?api_key={TMDB_API_KEY}"
+                    tmdb_detail_url = f"https://api.themoviedb.org/3/{tmdb_search_type}/{tmdb_id}?api_key={TMDB_API_KEY}"
                     try:
                         res = requests.get(tmdb_detail_url, timeout=5).json()
                         if res:
-                            # Only update if TMDb provides a better value AND manual data wasn't provided
+                            # Update common fields
                             if movie.get("overview") == "No overview available." and res.get("overview"):
                                 movie["overview"] = res.get("overview")
                             if not movie.get("poster") and res.get("poster_path"):
                                 movie["poster"] = f"https://image.tmdb.org/t/p/w500{res['poster_path']}"
                             
-                            release_date = res.get("release_date") # For movies
-                            if movie.get("year") == "N/A" and release_date:
-                                movie["year"] = release_date[:4]
-                                movie["release_date"] = release_date
-                            
-                            if movie.get("vote_average") is None and res.get("vote_average"):
-                                movie["vote_average"] = res.get("vote_average")
-                            if movie.get("original_language") == "N/A" and res.get("original_language"):
-                                movie["original_language"] = res.get("original_language")
-                            
+                            # Handle Movie specific fields
+                            if tmdb_search_type == "movie":
+                                release_date = res.get("release_date")
+                                if movie.get("year") == "N/A" and release_date:
+                                    movie["year"] = release_date[:4]
+                                    movie["release_date"] = release_date
+                                if movie.get("vote_average") is None and res.get("vote_average"):
+                                    movie["vote_average"] = res.get("vote_average")
+                                if movie.get("original_language") == "N/A" and res.get("original_language"):
+                                    movie["original_language"] = res.get("original_language")
+                                
+                                genres_ids = res.get("genres", [])
+                            # Handle TV Series specific fields
+                            elif tmdb_search_type == "tv":
+                                first_air_date = res.get("first_air_date")
+                                if movie.get("year") == "N/A" and first_air_date:
+                                    movie["year"] = first_air_date[:4]
+                                    movie["release_date"] = first_air_date # Use first_air_date as release_date for series
+                                if movie.get("vote_average") is None and res.get("vote_average"):
+                                    movie["vote_average"] = res.get("vote_average")
+                                if movie.get("original_language") == "N/A" and res.get("original_language"):
+                                    movie["original_language"] = res.get("original_language")
+                                
+                                genres_ids = res.get("genres", [])
+                                # Update title if TMDb provides a better one (e.g., from original_name to name)
+                                if res.get("name") and movie["title"] == data["title"]: # Check if current title is the original input
+                                    movie["title"] = res.get("name")
+
                             genres_names = []
-                            for genre_obj in res.get("genres", []):
+                            for genre_obj in genres_ids:
                                 if isinstance(genre_obj, dict) and genre_obj.get("id") in TMDb_Genre_Map:
                                     genres_names.append(TMDb_Genre_Map[genre_obj["id"]])
-                            if (not movie.get("genres") or movie["genres"] == []) and genres_names: # Only update if TMDb provides genres and no manual genres
+                            if (not movie.get("genres") or movie["genres"] == []) and genres_names:
                                 movie["genres"] = genres_names
 
                             # Persist TMDb fetched data to DB
                             movies.update_one({"_id": ObjectId(movie_id)}, {"$set": {
+                                "title": movie["title"], # Title might be updated for series
                                 "overview": movie["overview"],
                                 "poster": movie["poster"],
                                 "year": movie["year"],
@@ -1902,9 +1984,9 @@ def movie_detail(movie_id):
                     except Exception as e:
                         print(f"An unexpected error occurred while fetching TMDb detail data: {e}")
                 else:
-                    print(f"TMDb ID not found for movie '{movie.get('title', movie_id)}'. Skipping TMDb detail fetch.")
+                    print(f"TMDb ID not found for content '{movie.get('title', movie_id)}'. Skipping TMDb detail fetch.")
             else:
-                print("Skipping TMDb API call for movie details (not a movie, no key, or data already present).")
+                print("Skipping TMDb API call for content details (no key or data already present).")
 
         return render_template_string(detail_html, movie=movie)
     except Exception as e:
@@ -1952,6 +2034,67 @@ def admin():
             "is_coming_soon": is_coming_soon # Store coming soon status
         }
 
+        # Try to fetch from TMDb only if no manual poster or overview was provided
+        if TMDB_API_KEY and (not manual_poster_url and not manual_overview or movie_data["overview"] == "No overview available." or not movie_data["poster"]):
+            tmdb_search_type = "movie" if content_type == "movie" else "tv"
+            tmdb_url = f"https://api.themoviedb.org/3/search/{tmdb_search_type}?api_key={TMDB_API_KEY}&query={title}"
+            try:
+                res = requests.get(tmdb_url, timeout=5).json()
+                if res and "results" in res and res["results"]:
+                    data = res["results"][0]
+                    
+                    # Update TMDb ID
+                    movie_data["tmdb_id"] = data.get("id")
+
+                    # Overwrite only if TMDb provides a value and manual data wasn't explicitly provided
+                    if not manual_overview and data.get("overview"):
+                        movie_data["overview"] = data.get("overview")
+                    if not manual_poster_url and data.get("poster_path"):
+                        movie_data["poster"] = f"https://image.tmdb.org/t/p/w500{data['poster_path']}"
+                    
+                    # Specific fields for movie or series
+                    if tmdb_search_type == "movie":
+                        release_date = data.get("release_date")
+                        if not manual_year and release_date:
+                            movie_data["year"] = release_date[:4]
+                            movie_data["release_date"] = release_date
+                        
+                        movie_data["vote_average"] = data.get("vote_average", movie_data["vote_average"])
+                        if not manual_original_language and data.get("original_language"):
+                            movie_data["original_language"] = data.get("original_language")
+                        
+                        genres_ids = data.get("genre_ids", [])
+                        
+                    elif tmdb_search_type == "tv":
+                        first_air_date = data.get("first_air_date")
+                        if not manual_year and first_air_date:
+                            movie_data["year"] = first_air_date[:4]
+                            movie_data["release_date"] = first_air_date
+                        
+                        movie_data["vote_average"] = data.get("vote_average", movie_data["vote_average"])
+                        if not manual_original_language and data.get("original_language"):
+                            movie_data["original_language"] = data.get("original_language")
+                        
+                        genres_ids = data.get("genre_ids", [])
+                        # Update title from TMDb for series, as 'name' is often better than initial search query
+                        movie_data["title"] = data.get("name", title)
+
+                    genres_names = []
+                    for genre_id in genres_ids:
+                        if genre_id in TMDb_Genre_Map:
+                            genres_names.append(TMDb_Genre_Map[genre_id])
+                    if not manual_genres_list and genres_names: # Only update genres if TMDb provides them AND no manual genres
+                        movie_data["genres"] = genres_names
+                    
+                else:
+                    print(f"No results found on TMDb for title: {title} ({tmdb_search_type})")
+            except requests.exceptions.RequestException as e:
+                print(f"Error connecting to TMDb API for '{title}': {e}")
+            except Exception as e:
+                print(f"An unexpected error occurred while fetching TMDb data: {e}")
+        else:
+            print("Skipping TMDb API call (manual poster/overview provided or no key).")
+
         # Handle download links based on content type
         if content_type == "movie":
             links_list = []
@@ -1990,46 +2133,6 @@ def admin():
                     "links": episode_links
                 })
             movie_data["episodes"] = episodes_list
-
-        # Try to fetch from TMDb only if no manual poster or overview was provided
-        # And if it's a movie, TMDb series episode fetching is more complex and not implemented here
-        if TMDB_API_KEY and content_type == "movie" and (not manual_poster_url and not manual_overview or movie_data["overview"] == "No overview available." or not movie_data["poster"]):
-            tmdb_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={title}"
-            try:
-                res = requests.get(tmdb_url, timeout=5).json()
-                if res and "results" in res and res["results"]:
-                    data = res["results"][0]
-                    # Overwrite only if TMDb provides a value and manual data wasn't explicitly provided
-                    if not manual_overview and data.get("overview"):
-                        movie_data["overview"] = data.get("overview")
-                    if not manual_poster_url and data.get("poster_path"):
-                        movie_data["poster"] = f"https://image.tmdb.org/t/p/w500{data['poster_path']}"
-                    
-                    release_date = data.get("release_date")
-                    if not manual_year and release_date:
-                        movie_data["year"] = release_date[:4]
-                        movie_data["release_date"] = release_date
-                    
-                    movie_data["vote_average"] = data.get("vote_average", movie_data["vote_average"])
-                    if not manual_original_language and data.get("original_language"):
-                        movie_data["original_language"] = data.get("original_language")
-                    
-                    genres_names = []
-                    for genre_id in data.get("genre_ids", []):
-                        if genre_id in TMDb_Genre_Map:
-                            genres_names.append(TMDb_Genre_Map[genre_id])
-                    if not manual_genres_list and genres_names: # Only update genres if TMDb provides them AND no manual genres
-                        movie_data["genres"] = genres_names
-                    
-                    movie_data["tmdb_id"] = data.get("id")
-                else:
-                    print(f"No results found on TMDb for title: {title} (movie)")
-            except requests.exceptions.RequestException as e:
-                print(f"Error connecting to TMDb API for '{title}': {e}")
-            except Exception as e:
-                print(f"An unexpected error occurred while fetching TMDb data: {e}")
-        else:
-            print("Skipping TMDb API call (not a movie, no key, or manual poster/overview provided).")
 
         try:
             movies.insert_one(movie_data)
@@ -2099,6 +2202,66 @@ def edit_movie(movie_id):
                 "is_coming_soon": is_coming_soon
             }
 
+            # If TMDb API Key is available and no manual overview/poster provided, fetch and update
+            if TMDB_API_KEY and (not manual_poster_url and not manual_overview or movie.get("overview") == "No overview available." or not movie.get("poster")): 
+                tmdb_search_type = "movie" if content_type == "movie" else "tv"
+                tmdb_url = f"https://api.themoviedb.org/3/search/{tmdb_search_type}?api_key={TMDB_API_KEY}&query={title}"
+                try:
+                    res = requests.get(tmdb_url, timeout=5).json()
+                    if res and "results" in res and res["results"]:
+                        data = res["results"][0]
+                        # Update TMDb ID
+                        updated_data["tmdb_id"] = data.get("id")
+
+                        # Only update if TMDb provides a value and manual data wasn't explicitly provided
+                        if not manual_overview and data.get("overview"):
+                            updated_data["overview"] = data.get("overview")
+                        if not manual_poster_url and data.get("poster_path"):
+                            updated_data["poster"] = f"https://image.tmdb.org/t/p/w500{data['poster_path']}"
+                        
+                        # Specific fields for movie or series
+                        if tmdb_search_type == "movie":
+                            release_date = data.get("release_date")
+                            if not manual_year and release_date:
+                                updated_data["year"] = release_date[:4]
+                                updated_data["release_date"] = release_date
+                            
+                            updated_data["vote_average"] = data.get("vote_average", movie.get("vote_average"))
+                            if not manual_original_language and data.get("original_language"):
+                                updated_data["original_language"] = data.get("original_language")
+                            
+                            genres_ids = data.get("genre_ids", [])
+                        
+                        elif tmdb_search_type == "tv":
+                            first_air_date = data.get("first_air_date")
+                            if not manual_year and first_air_date:
+                                updated_data["year"] = first_air_date[:4]
+                                updated_data["release_date"] = first_air_date
+                            
+                            updated_data["vote_average"] = data.get("vote_average", movie.get("vote_average"))
+                            if not manual_original_language and data.get("original_language"):
+                                updated_data["original_language"] = data.get("original_language")
+                            
+                            genres_ids = data.get("genre_ids", [])
+                            # Update title from TMDb for series, as 'name' is often better than initial search query
+                            updated_data["title"] = data.get("name", title)
+
+                        genres_names = []
+                        for genre_id in genres_ids:
+                            if genre_id in TMDb_Genre_Map:
+                                genres_names.append(TMDb_Genre_Map[genre_id])
+                        if not manual_genres_list and genres_names:
+                            updated_data["genres"] = genres_names
+                        
+                    else:
+                        print(f"No results found on TMDb for title: {title} ({tmdb_search_type}) during edit.")
+                except requests.exceptions.RequestException as e:
+                    print(f"Error connecting to TMDb API for '{title}' during edit: {e}")
+                except Exception as e:
+                    print(f"An unexpected error occurred while fetching TMDb data during edit: {e}")
+            else:
+                print("Skipping TMDb API call (manual poster/overview provided or no key).")
+
             # Handle download links based on content type
             if content_type == "movie":
                 links_list = []
@@ -2143,47 +2306,6 @@ def edit_movie(movie_id):
                 # Remove top-level 'links' if present for series
                 if "links" in movie:
                     movies.update_one({"_id": ObjectId(movie_id)}, {"$unset": {"links": ""}})
-
-
-            # If TMDb API Key is available and no manual overview/poster provided, fetch and update
-            # Only for movies, as TMDb episode details are more complex
-            if TMDB_API_KEY and content_type == "movie" and (not manual_poster_url and not manual_overview): # Only try to fetch if not manually overridden
-                tmdb_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={title}"
-                try:
-                    res = requests.get(tmdb_url, timeout=5).json()
-                    if res and "results" in res and res["results"]:
-                        data = res["results"][0]
-                        # Only update if TMDb provides a value and manual data wasn't explicitly provided
-                        if not manual_overview and data.get("overview"):
-                            updated_data["overview"] = data.get("overview")
-                        if not manual_poster_url and data.get("poster_path"):
-                            updated_data["poster"] = f"https://image.tmdb.org/t/p/w500{data['poster_path']}"
-                        
-                        release_date = data.get("release_date")
-                        if not manual_year and release_date:
-                            updated_data["year"] = release_date[:4]
-                            updated_data["release_date"] = release_date
-                        
-                        updated_data["vote_average"] = data.get("vote_average", movie.get("vote_average")) # Keep old if TMDb doesn't provide
-                        if not manual_original_language and data.get("original_language"):
-                            updated_data["original_language"] = data.get("original_language")
-                        
-                        genres_names = []
-                        for genre_id in data.get("genre_ids", []):
-                            if genre_id in TMDb_Genre_Map:
-                                genres_names.append(TMDb_Genre_Map[genre_id])
-                        if not manual_genres_list and genres_names:
-                            updated_data["genres"] = genres_names
-                        
-                        updated_data["tmdb_id"] = data.get("id")
-                    else:
-                        print(f"No results found on TMDb for title: {title} (movie) during edit.")
-                except requests.exceptions.RequestException as e:
-                    print(f"Error connecting to TMDb API for '{title}' during edit: {e}")
-                except Exception as e:
-                    print(f"An unexpected error occurred while fetching TMDb data during edit: {e}")
-            else:
-                print("Skipping TMDb API call (not a movie, no key, or manual poster/overview provided).")
             
             # Update the movie in MongoDB
             movies.update_one({"_id": ObjectId(movie_id)}, {"$set": updated_data})
@@ -2260,4 +2382,3 @@ def recently_added_all():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
-
