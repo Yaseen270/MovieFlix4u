@@ -150,12 +150,59 @@ index_html = """
 
   .movie-card {
       flex: 0 0 16.66%; min-width: 220px; border-radius: 4px; overflow: hidden;
-      cursor: pointer; transition: transform 0.2s ease; position: relative; background-color: #222;
+      cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative; background-color: #222; display: block;
   }
   .movie-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
+  
+  /* --- NEW --- Poster Badge Style */
+  .poster-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: var(--netflix-red);
+    color: white;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    z-index: 3;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  }
+
+  /* --- NEW --- Card Hover Info Overlay */
+  .card-info-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 10px 10px 10px;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, transparent 100%);
+      color: white;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 2;
+  }
+  .card-info-title {
+      font-size: 1rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
 
   @media (hover: hover) {
-    .movie-card:hover { transform: scale(1.05); z-index: 5; }
+    .movie-card:hover { 
+        transform: scale(1.05); 
+        z-index: 5;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .movie-card:hover .card-info-overlay {
+        opacity: 1;
+        transform: translateY(0);
+    }
   }
 
   .full-page-grid-container { padding: 100px 50px 50px 50px; }
@@ -181,6 +228,7 @@ index_html = """
   .nav-item.active .fa-home { color: var(--netflix-red); }
 
   @media (max-width: 768px) {
+      .card-info-overlay { display: none; } /* Disable complex hover on mobile */
       body { padding-bottom: var(--nav-height); }
       .main-nav { padding: 10px 15px; }
       .logo { font-size: 24px; }
@@ -213,6 +261,17 @@ index_html = """
 </header>
 
 <main>
+  {# --- MACRO FOR RENDERING A SINGLE MOVIE CARD --- #}
+  {% macro render_movie_card(m) %}
+    <a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card">
+      {% if m.poster_badge %}<div class="poster-badge">{{ m.poster_badge }}</div>{% endif %}
+      <img class="movie-poster" loading="lazy" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}">
+      <div class="card-info-overlay">
+          <h4 class="card-info-title">{{ m.title }}</h4>
+      </div>
+    </a>
+  {% endmacro %}
+
   {% if is_full_page_list %}
     <div class="full-page-grid-container">
       <h2 class="full-page-grid-title">{{ query }}</h2>
@@ -220,7 +279,7 @@ index_html = """
         <p style="text-align:center; color: var(--text-dark); margin-top: 40px;">No content found.</p>
       {% else %}
         <div class="full-page-grid">
-          {% for m in movies %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" loading="lazy" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
+          {% for m in movies %}{{ render_movie_card(m) }}{% endfor %}
         </div>
       {% endif %}
     </div>
@@ -249,7 +308,7 @@ index_html = """
         </div>
         <div class="carousel-wrapper">
           <div class="carousel-content">
-            {% for m in movies_list %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" loading="lazy" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
+            {% for m in movies_list %}{{ render_movie_card(m) }}{% endfor %}
           </div>
           <button class="carousel-arrow prev"><i class="fas fa-chevron-left"></i></button>
           <button class="carousel-arrow next"><i class="fas fa-chevron-right"></i></button>
@@ -606,7 +665,9 @@ admin_html = """
     <div class="form-group"><label for="overview">Overview:</label><textarea name="overview" id="overview"></textarea></div>
     <div class="form-group"><label for="release_date">Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" id="release_date" /></div>
     <div class="form-group"><label for="genres">Genres (Comma-separated):</label><input type="text" name="genres" id="genres" /></div>
-    
+    <!-- NEW Field for Poster Badge -->
+    <div class="form-group"><label for="poster_badge">Poster Badge (e.g., Trending, 4K):</label><input type="text" name="poster_badge" id="poster_badge" /></div>
+
     <hr style="border-color: #333; margin: 20px 0;">
     <div class="form-group"><input type="checkbox" name="is_trending" id="is_trending" value="true"><label for="is_trending" style="display: inline-block;">Is Trending?</label></div>
     <div class="form-group"><input type="checkbox" name="is_coming_soon" id="is_coming_soon" value="true"><label for="is_coming_soon" style="display: inline-block;">Is Coming Soon?</label></div>
@@ -735,6 +796,9 @@ edit_html = """
     <div class="form-group"><label>Overview:</label><textarea name="overview">{{ movie.overview or '' }}</textarea></div>
     <div class="form-group"><label>Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" value="{{ movie.release_date or '' }}" /></div>
     <div class="form-group"><label>Genres (Comma-separated):</label><input type="text" name="genres" value="{{ movie.genres|join(', ') if movie.genres else '' }}" /></div>
+    <!-- NEW Field for Poster Badge -->
+    <div class="form-group"><label>Poster Badge:</label><input type="text" name="poster_badge" value="{{ movie.poster_badge or '' }}" /></div>
+
 
     <hr style="border-color: #333; margin: 20px 0;">
     <div class="form-group"><input type="checkbox" name="is_trending" value="true" {% if movie.is_trending %}checked{% endif %}><label style="display: inline-block;">Is Trending?</label></div>
@@ -904,7 +968,8 @@ def admin():
             "poster": request.form.get("poster_url", "").strip(),
             "overview": request.form.get("overview", "").strip(),
             "release_date": request.form.get("release_date", "").strip(),
-            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()]
+            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()],
+            "poster_badge": request.form.get("poster_badge", "").strip() # NEW: Save badge
         }
 
         if content_type == "movie":
@@ -953,7 +1018,8 @@ def edit_movie(movie_id):
             "poster": request.form.get("poster_url", "").strip(),
             "overview": request.form.get("overview", "").strip(),
             "release_date": request.form.get("release_date", "").strip(),
-            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()]
+            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()],
+            "poster_badge": request.form.get("poster_badge", "").strip() # NEW: Update badge
         }
         
         if content_type == "movie":
