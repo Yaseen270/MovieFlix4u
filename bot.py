@@ -5,32 +5,28 @@ import requests, os
 from functools import wraps
 from dotenv import load_dotenv
 
-# .env ফাইল থেকে এনভায়রনমেন্ট ভেরিয়েবল লোড করুন (শুধুমাত্র লোকাল ডেভেলপমেন্টের জন্য)
+# .env ফাইল থেকে এনভায়রনমেন্ট ভেরিয়েবল লোড করুন
 load_dotenv()
 
 app = Flask(__name__)
 
-# Environment variables for MongoDB URI and TMDb API Key
+# Environment variables
 MONGO_URI = os.getenv("MONGO_URI")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
-
-# --- অ্যাডমিন অথেন্টিকেশনের জন্য নতুন ভেরিয়েবল ও ফাংশন ---
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "password")
 
+# --- অ্যাডমিন অথেন্টিকেশন ফাংশন ---
 def check_auth(username, password):
-    """ইউজারনেম ও পাসওয়ার্ড সঠিক কিনা তা যাচাই করে।"""
     return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
 
 def authenticate():
-    """অথেন্টিকেশন ব্যর্থ হলে 401 রেসপন্স পাঠায়।"""
     return Response(
     'Could not verify your access level for that URL.\n'
     'You have to login with proper credentials', 401,
     {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 def requires_auth(f):
-    """এই ডেকোরেটরটি রুট ফাংশনে অথেন্টিকেশন চেক করে।"""
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
@@ -38,14 +34,11 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
-# --- অথেন্টিকেশন সংক্রান্ত পরিবর্তন শেষ ---
+# --- অথেন্টিকেশন শেষ ---
 
 # Check if environment variables are set
-if not MONGO_URI:
-    print("Error: MONGO_URI environment variable not set. Exiting.")
-    exit(1)
-if not TMDB_API_KEY:
-    print("Error: TMDB_API_KEY environment variable not set. Exiting.")
+if not MONGO_URI or not TMDB_API_KEY:
+    print("Error: MONGO_URI and TMDB_API_KEY environment variables must be set. Exiting.")
     exit(1)
 
 # Database connection
@@ -58,15 +51,8 @@ except Exception as e:
     print(f"Error connecting to MongoDB: {e}. Exiting.")
     exit(1)
 
-# TMDb Genre Map (for converting genre IDs to names)
-TMDb_Genre_Map = {
-    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
-    99: "Documentary", 18: "Drama", 10402: "Music", 9648: "Mystery",
-    10749: "Romance", 878: "Science Fiction", 10770: "TV Movie", 53: "Thriller",
-    10752: "War", 37: "Western", 10751: "Family", 14: "Fantasy", 36: "History"
-}
 
-# --- START OF index_html TEMPLATE (Final Mobile-First Polish) ---
+# --- START OF index_html TEMPLATE ---
 index_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -168,7 +154,6 @@ index_html = """
   }
   .movie-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
 
-  /* Apply hover effect only on devices that can hover */
   @media (hover: hover) {
     .movie-card:hover { transform: scale(1.05); z-index: 5; }
   }
@@ -180,14 +165,11 @@ index_html = """
   }
   .full-page-grid .movie-card { min-width: 0; }
   
-  /* --- BOTTOM NAVIGATION BAR --- */
   .bottom-nav {
-      display: none; /* Hidden by default on desktop */
-      position: fixed; bottom: 0; left: 0; right: 0;
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
       height: var(--nav-height); background-color: #181818;
-      border-top: 1px solid #282828;
-      justify-content: space-around; align-items: center;
-      z-index: 200;
+      border-top: 1px solid #282828; justify-content: space-around;
+      align-items: center; z-index: 200;
   }
   .nav-item {
       display: flex; flex-direction: column; align-items: center;
@@ -196,33 +178,27 @@ index_html = """
   }
   .nav-item i { font-size: 20px; margin-bottom: 4px; }
   .nav-item.active { color: var(--text-light); }
-  .nav-item.active .fa-home { color: var(--netflix-red); } /* Special color for home */
+  .nav-item.active .fa-home { color: var(--netflix-red); }
 
-  /* --- MOBILE ENHANCEMENTS --- */
   @media (max-width: 768px) {
-      body { padding-bottom: var(--nav-height); } /* Ensure space for bottom nav */
+      body { padding-bottom: var(--nav-height); }
       .main-nav { padding: 10px 15px; }
       .logo { font-size: 24px; }
       .search-input { width: 150px; padding: 6px 10px; font-size: 14px; }
-      
       .hero-section { height: 60vh; padding: 15px; align-items: center; }
       .hero-content { max-width: 90%; text-align: center; }
       .hero-title { font-size: 2.8rem; }
       .hero-overview { display: none; }
       .hero-buttons .btn { padding: 8px 18px; font-size: 0.9rem; }
-      
       .carousel-arrow { display: none; }
       .carousel-row { margin: 25px 0; }
       .carousel-header { margin: 0 15px 10px 15px; }
       .carousel-title { font-size: 1.2rem; }
       .carousel-content { padding: 0 15px; gap: 8px; }
       .movie-card { min-width: 130px; }
-      
       .full-page-grid-container { padding: 80px 15px 30px; }
       .full-page-grid-title { font-size: 1.8rem; }
       .full-page-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-      
-      /* Show bottom navigation on mobile */
       .bottom-nav { display: flex; }
   }
 </style>
@@ -244,7 +220,7 @@ index_html = """
         <p style="text-align:center; color: var(--text-dark); margin-top: 40px;">No content found.</p>
       {% else %}
         <div class="full-page-grid">
-          {% for m in movies %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
+          {% for m in movies %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" loading="lazy" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
         </div>
       {% endif %}
     </div>
@@ -255,7 +231,9 @@ index_html = """
           <h1 class="hero-title">{{ trending_movies[0].title }}</h1>
           <p class="hero-overview">{{ trending_movies[0].overview }}</p>
           <div class="hero-buttons">
-            <a href="{{ url_for('movie_detail', movie_id=trending_movies[0]._id) }}" class="btn btn-primary"><i class="fas fa-play"></i> Watch Now</a>
+             {% if trending_movies[0].watch_link %}
+                <a href="{{ url_for('watch_movie', movie_id=trending_movies[0]._id) }}" class="btn btn-primary"><i class="fas fa-play"></i> Watch Now</a>
+             {% endif %}
             <a href="{{ url_for('movie_detail', movie_id=trending_movies[0]._id) }}" class="btn btn-secondary"><i class="fas fa-info-circle"></i> More Info</a>
           </div>
         </div>
@@ -271,7 +249,7 @@ index_html = """
         </div>
         <div class="carousel-wrapper">
           <div class="carousel-content">
-            {% for m in movies_list %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
+            {% for m in movies_list %}<a href="{{ url_for('movie_detail', movie_id=m._id) }}" class="movie-card"><img class="movie-poster" loading="lazy" src="{{ m.poster or 'https://via.placeholder.com/400x600.png?text=No+Image' }}" alt="{{ m.title }}"></a>{% endfor %}
           </div>
           <button class="carousel-arrow prev"><i class="fas fa-chevron-left"></i></button>
           <button class="carousel-arrow next"><i class="fas fa-chevron-right"></i></button>
@@ -320,7 +298,7 @@ index_html = """
 # --- END OF index_html TEMPLATE ---
 
 
-# --- START OF detail_html TEMPLATE (Final Mobile-First Polish) ---
+# --- START OF detail_html TEMPLATE ---
 detail_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -378,18 +356,41 @@ detail_html = """
   .detail-meta span { font-weight: 700; color: var(--text-light); }
   .detail-overview { font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; }
   
-  .download-section h3 {
+  .watch-now-btn {
+      background-color: var(--netflix-red); color: white; padding: 15px 30px;
+      font-size: 1.2rem; font-weight: 700; border: none; border-radius: 5px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+      text-decoration: none; margin-bottom: 25px;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+  }
+  .watch-now-btn:hover { transform: scale(1.05); background-color: #f61f29; }
+
+  .section-title {
       font-size: 1.5rem; font-weight: 700; margin-bottom: 20px;
       padding-bottom: 5px; border-bottom: 2px solid var(--netflix-red); display: inline-block;
   }
-  .download-item, .episode-item { margin-bottom: 20px; }
+  .trailer-section { margin-bottom: 30px; }
+  .video-container {
+      position: relative; padding-bottom: 56.25%; height: 0;
+      overflow: hidden; max-width: 100%; background: #000; border-radius: 8px;
+  }
+  .video-container iframe {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  }
+  .download-section { margin-top: 30px; }
   .download-button, .episode-download-button {
-      display: inline-block; padding: 12px 25px; background-color: var(--netflix-red);
+      display: inline-block; padding: 12px 25px; background-color: #444;
       color: white; text-decoration: none; border-radius: 4px; font-weight: 700;
       transition: background-color 0.3s ease; margin-right: 10px; margin-bottom: 10px;
-      text-align: center;
+      text-align: center; vertical-align: middle;
   }
-  .download-button:hover, .episode-download-button:hover { background-color: #b00710; }
+  .download-button:hover, .episode-download-button:hover { background-color: #555; }
+  .copy-button {
+      background-color: #555; color: white; border: none; padding: 8px 15px;
+      font-size: 0.9rem; cursor: pointer; border-radius: 4px;
+      margin-left: -5px; margin-bottom: 10px; vertical-align: middle; transition: background-color 0.2s;
+  }
+  .copy-button:hover { background-color: #777; }
   .no-link-message { color: var(--text-dark); font-style: italic; }
   .episode-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
   .episode-overview-text { font-size: 0.9rem; color: var(--text-dark); margin-bottom: 10px; }
@@ -409,9 +410,11 @@ detail_html = """
       .detail-title { font-size: 2.2rem; }
       .detail-meta { font-size: 0.9rem; gap: 15px; }
       .detail-overview { font-size: 1rem; line-height: 1.5; }
-      .download-section h3 { font-size: 1.3rem; }
+      .watch-now-btn { display: block; width: 100%; max-width: 320px; margin: 0 auto 20px auto; }
+      .section-title { font-size: 1.3rem; }
       .episode-title { font-size: 1.1rem; }
       .download-button, .episode-download-button { display: block; width: 100%; max-width: 320px; margin: 0 auto 10px auto; }
+      .copy-button { display: block; width: 100%; max-width: 320px; margin: 0 auto 10px auto; }
   }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -434,29 +437,52 @@ detail_html = """
       </div>
       <p class="detail-overview">{{ movie.overview }}</p>
       
+      {% if movie.watch_link and movie.type == 'movie' and not movie.is_coming_soon %}
+        <a href="{{ url_for('watch_movie', movie_id=movie._id) }}" class="watch-now-btn">
+            <i class="fas fa-play"></i> Watch Now
+        </a>
+      {% endif %}
+      
+      {% if trailer_key %}
+      <div class="trailer-section">
+        <h3 class="section-title">Watch Trailer</h3>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/{{ trailer_key }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="download-section">
-        {% if movie.is_coming_soon %}<h3>Coming Soon</h3>
-        {% elif movie.type == 'movie' %}
-          <h3>Download Links</h3>
-          {% if movie.links %}
+        {% if movie.is_coming_soon %}<h3 class="section-title">Coming Soon</h3>
+        {% elif movie.type == 'movie' and movie.links %}
+          <h3 class="section-title">Download Links</h3>
             {% for link_item in movie.links %}
             <a class="download-button" href="{{ link_item.url }}" target="_blank" rel="noopener">
-              <i class="fas fa-download"></i> {{ link_item.quality }} [{{ link_item.size }}]
+              <i class="fas fa-download"></i> {{ link_item.quality }} [{{ link_item.size or 'N/A' }}]
             </a>
+            <button class="copy-button" onclick="copyToClipboard('{{ link_item.url }}')"><i class="fas fa-copy"></i> Copy</button>
             {% endfor %}
-          {% else %}<p class="no-link-message">No links available.</p>{% endif %}
         {% elif movie.type == 'series' and movie.episodes %}
-          <h3>Episodes</h3>
+          <h3 class="section-title">Episodes</h3>
           {% for episode in movie.episodes | sort(attribute='episode_number') %}
           <div class="episode-item">
             <h4 class="episode-title">E{{ episode.episode_number }}: {{ episode.title }}</h4>
             {% if episode.overview %}<p class="episode-overview-text">{{ episode.overview }}</p>{% endif %}
+            {% if episode.watch_link %}
+                <a href="{{ url_for('watch_movie', movie_id=movie._id, ep=episode.episode_number) }}" class="episode-download-button" style="background-color: var(--netflix-red);"><i class="fas fa-play"></i> Watch Episode</a>
+            {% endif %}
             {% if episode.links %}
-              {% for link_item in episode.links %}<a class="episode-download-button" href="{{ link_item.url }}" target="_blank" rel="noopener"><i class="fas fa-download"></i> {{ link_item.quality }}</a>{% endfor %}
-            {% else %}<p class="no-link-message">No links for this episode.</p>{% endif %}
+              {% for link_item in episode.links %}
+                <a class="episode-download-button" href="{{ link_item.url }}" target="_blank" rel="noopener"><i class="fas fa-download"></i> {{ link_item.quality }}</a>
+                <button class="copy-button" onclick="copyToClipboard('{{ link_item.url }}')"><i class="fas fa-copy"></i></button>
+              {% endfor %}
+            {% endif %}
           </div>
           {% endfor %}
-        {% else %}<p class="no-link-message">No download links available.</p>{% endif %}
+        {% endif %}
+        {% if not movie.links and not movie.episodes and not movie.is_coming_soon %}
+            <p class="no-link-message">No download links available.</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -466,13 +492,49 @@ detail_html = """
   <h2>Content not found.</h2>
 </div>
 {% endif %}
+<script>
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => alert('Link copied!'), () => alert('Copy failed!'));
+}
+</script>
 </body>
 </html>
 """
 # --- END OF detail_html TEMPLATE ---
 
 
-# --- START OF admin_html TEMPLATE (Dark theme update with mobile viewport) ---
+# --- START OF watch_html TEMPLATE ---
+watch_html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watching: {{ title }}</title>
+<style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; }
+    .player-container { width: 100%; height: 100%; }
+    .player-container iframe { width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+    <div class="player-container">
+        <iframe 
+            src="{{ watch_link }}" 
+            allowfullscreen 
+            allowtransparency 
+            allow="autoplay"
+            scrolling="no" 
+            frameborder="0">
+        </iframe>
+    </div>
+</body>
+</html>
+"""
+# --- END OF watch_html TEMPLATE ---
+
+
+# --- START OF admin_html TEMPLATE ---
 admin_html = """
 <!DOCTYPE html>
 <html>
@@ -485,16 +547,15 @@ admin_html = """
       --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5;
     }
     body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; }
-    h2 { 
-      font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red);
-      font-size: 2.5rem; margin-bottom: 20px;
-    }
-    form { max-width: 800px; margin-bottom: 40px; background: var(--dark-gray); padding: 25px; border-radius: 8px;}
+    h2, h3 { font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red); }
+    h2 { font-size: 2.5rem; margin-bottom: 20px; }
+    h3 { font-size: 1.5rem; margin: 20px 0 10px 0;}
+    form { max-width: 800px; margin: 0 auto 40px auto; background: var(--dark-gray); padding: 25px; border-radius: 8px;}
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; }
     input[type="text"], input[type="url"], textarea, select, input[type="number"], input[type="search"] {
       width: 100%; padding: 12px; border-radius: 4px; border: 1px solid var(--light-gray);
-      font-size: 1rem; background: var(--light-gray); color: var(--text-light);
+      font-size: 1rem; background: var(--light-gray); color: var(--text-light); box-sizing: border-box;
     }
     input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.2); }
     textarea { resize: vertical; min-height: 100px; }
@@ -518,50 +579,46 @@ admin_html = """
     .action-buttons a:hover, .action-buttons button:hover { opacity: 0.8; }
     .episode-item { border: 1px solid var(--light-gray); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <h2>Add New Content</h2>
   <form method="post">
-    <div class="form-group"><label for="title">Title:</label><input type="text" name="title" id="title" required /></div>
+    <div class="form-group"><label for="title">Title (Required):</label><input type="text" name="title" id="title" required /></div>
     <div class="form-group"><label for="content_type">Content Type:</label><select name="content_type" id="content_type" onchange="toggleEpisodeFields()"><option value="movie">Movie</option><option value="series">TV/Web Series</option></select></div>
-    <div id="movie_download_links_group">
-      <div class="form-group"><label>480p Link:</label><input type="url" name="link_480p" /></div>
-      <div class="form-group"><label>720p Link:</label><input type="url" name="link_720p" /></div>
-      <div class="form-group"><label>1080p Link:</label><input type="url" name="link_1080p" /></div>
+    
+    <div id="movie_fields">
+        <div class="form-group"><label for="watch_link">Watch Link (Embed URL):</label><input type="url" name="watch_link" id="watch_link" /></div>
+        <hr><p style="text-align:center; font-weight:bold;">OR Download Links</p>
+        <div class="form-group"><label>480p Link:</label><input type="url" name="link_480p" /></div>
+        <div class="form-group"><label>720p Link:</label><input type="url" name="link_720p" /></div>
+        <div class="form-group"><label>1080p Link:</label><input type="url" name="link_1080p" /></div>
     </div>
+
     <div id="episode_fields" style="display: none;">
       <h3>Episodes</h3><div id="episodes_container"></div>
       <button type="button" onclick="addEpisodeField()" class="add-episode-btn">Add Episode</button>
     </div>
+    
     <hr style="border-color: #333; margin: 20px 0;">
-    <div class="form-group"><label for="quality">Quality Tag (e.g., HD):</label><input type="text" name="quality" id="quality" /></div>
-    <div class="form-group"><label for="top_label">Poster Top Label (Optional):</label><input type="text" name="top_label" id="top_label" /></div>
+    <h3>Manual Details (Optional - Leave blank for auto-fetch from TMDb)</h3>
+    <div class="form-group"><label for="poster_url">Poster URL:</label><input type="url" name="poster_url" id="poster_url" /></div>
+    <div class="form-group"><label for="overview">Overview:</label><textarea name="overview" id="overview"></textarea></div>
+    <div class="form-group"><label for="release_date">Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" id="release_date" /></div>
+    <div class="form-group"><label for="genres">Genres (Comma-separated):</label><input type="text" name="genres" id="genres" /></div>
+    
+    <hr style="border-color: #333; margin: 20px 0;">
     <div class="form-group"><input type="checkbox" name="is_trending" id="is_trending" value="true"><label for="is_trending" style="display: inline-block;">Is Trending?</label></div>
     <div class="form-group"><input type="checkbox" name="is_coming_soon" id="is_coming_soon" value="true"><label for="is_coming_soon" style="display: inline-block;">Is Coming Soon?</label></div>
-    <div class="form-group"><label for="overview">Overview (Optional):</label><textarea name="overview" id="overview"></textarea></div>
-    <div class="form-group"><label for="poster_url">Poster URL (Optional):</label><input type="url" name="poster_url" id="poster_url" /></div>
-    <div class="form-group"><label for="year">Year (Optional):</label><input type="text" name="year" id="year" /></div>
-    <div class="form-group"><label for="original_language">Language (Optional):</label><input type="text" name="original_language" id="original_language" /></div>
-    <div class="form-group"><label for="genres">Genres (Comma-separated, Optional):</label><input type="text" name="genres" id="genres" /></div>
     <button type="submit">Add Content</button>
   </form>
 
-  <h2>Search Content</h2>
-  <form method="GET" action="{{ url_for('admin') }}">
-    <div class="form-group"><label for="admin_search_query">Search by Title:</label><input type="search" name="q" id="admin_search_query" value="{{ admin_query|default('') }}" /></div>
-    <button type="submit">Search</button>
-  </form>
-
-  <h2>Manage Existing Content {% if admin_query %}for "{{ admin_query }}"{% endif %}</h2>
-  <table><thead><tr><th>Title</th><th>Type</th><th>Quality</th><th>Trending</th><th>Coming Soon</th><th>Actions</th></tr></thead>
+  <h2>Manage Content</h2>
+  <table><thead><tr><th>Title</th><th>Type</th><th>Actions</th></tr></thead>
   <tbody>
     {% for movie in movies %}
     <tr>
-      <td>{{ movie.title }}</td><td>{{ movie.type | title }}</td><td>{{ movie.quality or 'N/A' }}</td>
-      <td>{% if movie.quality == 'TRENDING' %}Yes{% else %}No{% endif %}</td><td>{% if movie.is_coming_soon %}Yes{% else %}No{% endif %}</td>
+      <td>{{ movie.title }}</td><td>{{ movie.type | title }}</td>
       <td class="action-buttons">
         <a href="{{ url_for('edit_movie', movie_id=movie._id) }}" class="edit-btn">Edit</a>
         <button class="delete-btn" onclick="confirmDelete('{{ movie._id }}', '{{ movie.title }}')">Delete</button>
@@ -576,7 +633,7 @@ admin_html = """
     function toggleEpisodeFields() {
         var isSeries = document.getElementById('content_type').value === 'series';
         document.getElementById('episode_fields').style.display = isSeries ? 'block' : 'none';
-        document.getElementById('movie_download_links_group').style.display = isSeries ? 'none' : 'block';
+        document.getElementById('movie_fields').style.display = isSeries ? 'none' : 'block';
     }
     function addEpisodeField() {
         const container = document.getElementById('episodes_container');
@@ -585,10 +642,10 @@ admin_html = """
         div.innerHTML = `
             <div class="form-group"><label>Ep Number:</label><input type="number" name="episode_number[]" required /></div>
             <div class="form-group"><label>Ep Title:</label><input type="text" name="episode_title[]" required /></div>
-            <div class="form-group"><label>Ep Overview:</label><textarea name="episode_overview[]"></textarea></div>
+            <div class="form-group"><label>Watch Link (Embed):</label><input type="url" name="episode_watch_link[]" /></div>
+            <hr><p>OR Download Links</p>
             <div class="form-group"><label>480p Link:</label><input type="url" name="episode_link_480p[]" /></div>
             <div class="form-group"><label>720p Link:</label><input type="url" name="episode_link_720p[]" /></div>
-            <div class="form-group"><label>1080p Link:</label><input type="url" name="episode_link_1080p[]" /></div>
             <button type="button" onclick="this.parentElement.remove()" class="delete-btn" style="background:#dc3545; padding: 6px 12px;">Remove Ep</button>
         `;
         container.appendChild(div);
@@ -600,7 +657,7 @@ admin_html = """
 # --- END OF admin_html TEMPLATE ---
 
 
-# --- START OF edit_html TEMPLATE (Dark theme update with mobile viewport) ---
+# --- START OF edit_html TEMPLATE ---
 edit_html = """
 <!DOCTYPE html>
 <html>
@@ -613,13 +670,15 @@ edit_html = """
       --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5;
     }
     body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; }
-    h2 { font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red); font-size: 2.5rem; margin-bottom: 20px; }
-    form { max-width: 800px; margin-bottom: 40px; background: var(--dark-gray); padding: 25px; border-radius: 8px;}
+    h2, h3 { font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red); }
+    h2 { font-size: 2.5rem; margin-bottom: 20px; }
+    h3 { font-size: 1.5rem; margin: 20px 0 10px 0;}
+    form { max-width: 800px; margin: 0 auto 40px auto; background: var(--dark-gray); padding: 25px; border-radius: 8px;}
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; }
-    input[type="text"], input[type="url"], textarea, select, input[type="number"] {
+    input, textarea, select {
       width: 100%; padding: 12px; border-radius: 4px; border: 1px solid var(--light-gray);
-      font-size: 1rem; background: var(--light-gray); color: var(--text-light);
+      font-size: 1rem; background: var(--light-gray); color: var(--text-light); box-sizing: border-box;
     }
     input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.2); }
     textarea { resize: vertical; min-height: 100px; }
@@ -633,8 +692,6 @@ edit_html = """
     .episode-item { border: 1px solid var(--light-gray); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
     .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -646,44 +703,49 @@ edit_html = """
         <option value="movie" {% if movie.type == 'movie' %}selected{% endif %}>Movie</option>
         <option value="series" {% if movie.type == 'series' %}selected{% endif %}>TV/Web Series</option>
     </select></div>
-    <div id="movie_download_links_group">
+
+    <div id="movie_fields">
+        <div class="form-group"><label>Watch Link (Embed URL):</label><input type="url" name="watch_link" value="{{ movie.watch_link or '' }}" /></div>
+        <hr><p style="text-align:center; font-weight:bold;">OR Download Links</p>
         <div class="form-group"><label>480p Link:</label><input type="url" name="link_480p" value="{% for l in movie.links %}{% if l.quality == '480p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
         <div class="form-group"><label>720p Link:</label><input type="url" name="link_720p" value="{% for l in movie.links %}{% if l.quality == '720p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
         <div class="form-group"><label>1080p Link:</label><input type="url" name="link_1080p" value="{% for l in movie.links %}{% if l.quality == '1080p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
     </div>
+
     <div id="episode_fields" style="display: none;">
         <h3>Episodes</h3><div id="episodes_container">
         {% if movie.type == 'series' and movie.episodes %}{% for ep in movie.episodes %}
         <div class="episode-item">
             <div class="form-group"><label>Ep Number:</label><input type="number" name="episode_number[]" value="{{ ep.episode_number }}" required /></div>
             <div class="form-group"><label>Ep Title:</label><input type="text" name="episode_title[]" value="{{ ep.title }}" required /></div>
-            <div class="form-group"><label>Ep Overview:</label><textarea name="episode_overview[]">{{ ep.overview }}</textarea></div>
+            <div class="form-group"><label>Watch Link (Embed):</label><input type="url" name="episode_watch_link[]" value="{{ ep.watch_link or '' }}" /></div>
+            <hr><p>OR Download Links</p>
             <div class="form-group"><label>480p Link:</label><input type="url" name="episode_link_480p[]" value="{% for l in ep.links %}{% if l.quality=='480p'%}{{l.url}}{%endif%}{%endfor%}" /></div>
             <div class="form-group"><label>720p Link:</label><input type="url" name="episode_link_720p[]" value="{% for l in ep.links %}{% if l.quality=='720p'%}{{l.url}}{%endif%}{%endfor%}" /></div>
-            <div class="form-group"><label>1080p Link:</label><input type="url" name="episode_link_1080p[]" value="{% for l in ep.links %}{% if l.quality=='1080p'%}{{l.url}}{%endif%}{%endfor%}" /></div>
             <button type="button" onclick="this.parentElement.remove()" class="delete-btn">Remove Ep</button>
         </div>
         {% endfor %}{% endif %}
         </div>
         <button type="button" onclick="addEpisodeField()" class="add-episode-btn">Add Episode</button>
     </div>
+
     <hr style="border-color: #333; margin: 20px 0;">
-    <div class="form-group"><label>Quality Tag:</label><input type="text" name="quality" value="{{ movie.quality }}" /></div>
-    <div class="form-group"><label>Poster Top Label:</label><input type="text" name="top_label" value="{{ movie.top_label }}" /></div>
-    <div class="form-group"><input type="checkbox" name="is_trending" value="true" {% if movie.quality == 'TRENDING' %}checked{% endif %}><label style="display: inline-block;">Is Trending?</label></div>
+    <h3>Manual Details (Update or leave blank for auto-fetch)</h3>
+    <div class="form-group"><label>Poster URL:</label><input type="url" name="poster_url" value="{{ movie.poster or '' }}" /></div>
+    <div class="form-group"><label>Overview:</label><textarea name="overview">{{ movie.overview or '' }}</textarea></div>
+    <div class="form-group"><label>Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" value="{{ movie.release_date or '' }}" /></div>
+    <div class="form-group"><label>Genres (Comma-separated):</label><input type="text" name="genres" value="{{ movie.genres|join(', ') if movie.genres else '' }}" /></div>
+
+    <hr style="border-color: #333; margin: 20px 0;">
+    <div class="form-group"><input type="checkbox" name="is_trending" value="true" {% if movie.is_trending %}checked{% endif %}><label style="display: inline-block;">Is Trending?</label></div>
     <div class="form-group"><input type="checkbox" name="is_coming_soon" value="true" {% if movie.is_coming_soon %}checked{% endif %}><label style="display: inline-block;">Is Coming Soon?</label></div>
-    <div class="form-group"><label>Overview:</label><textarea name="overview">{{ movie.overview }}</textarea></div>
-    <div class="form-group"><label>Poster URL:</label><input type="url" name="poster_url" value="{{ movie.poster }}" /></div>
-    <div class="form-group"><label>Year:</label><input type="text" name="year" value="{{ movie.year }}" /></div>
-    <div class="form-group"><label>Language:</label><input type="text" name="original_language" value="{{ movie.original_language }}" /></div>
-    <div class="form-group"><label>Genres:</label><input type="text" name="genres" value="{{ movie.genres|join(', ') }}" /></div>
     <button type="submit">Update Content</button>
   </form>
   <script>
     function toggleEpisodeFields() {
         var isSeries = document.getElementById('content_type').value === 'series';
         document.getElementById('episode_fields').style.display = isSeries ? 'block' : 'none';
-        document.getElementById('movie_download_links_group').style.display = isSeries ? 'none' : 'block';
+        document.getElementById('movie_fields').style.display = isSeries ? 'none' : 'block';
     }
     function addEpisodeField() {
         const container = document.getElementById('episodes_container');
@@ -692,10 +754,10 @@ edit_html = """
         div.innerHTML = `
             <div class="form-group"><label>Ep Number:</label><input type="number" name="episode_number[]" required /></div>
             <div class="form-group"><label>Ep Title:</label><input type="text" name="episode_title[]" required /></div>
-            <div class="form-group"><label>Ep Overview:</label><textarea name="episode_overview[]"></textarea></div>
+            <div class="form-group"><label>Watch Link (Embed):</label><input type="url" name="episode_watch_link[]" /></div>
+            <hr><p>OR Download Links</p>
             <div class="form-group"><label>480p Link:</label><input type="url" name="episode_link_480p[]" /></div>
             <div class="form-group"><label>720p Link:</label><input type="url" name="episode_link_720p[]" /></div>
-            <div class="form-group"><label>1080p Link:</label><input type="url" name="episode_link_1080p[]" /></div>
             <button type="button" onclick="this.parentElement.remove()" class="delete-btn">Remove Ep</button>
         `;
         container.appendChild(div);
@@ -707,186 +769,172 @@ edit_html = """
 # --- END OF edit_html TEMPLATE ---
 
 
+# ----------------- Flask Routes -----------------
+
 @app.route('/')
 def home():
     query = request.args.get('q')
-    
-    movies_list = []
-    trending_movies_list = []
-    latest_movies_list = []
-    latest_series_list = []
-    coming_soon_movies_list = []
-    recently_added_list = []
-
-    is_full_page_list = False
+    context = {}
 
     if query:
-        result = movies.find({"title": {"$regex": query, "$options": "i"}}).sort('_id', -1)
-        movies_list = list(result)
-        is_full_page_list = True
-        # For a search query, the title of the page will be the query itself
-        query = f'Results for "{query}"'
+        movies_list = list(movies.find({"title": {"$regex": query, "$options": "i"}}).sort('_id', -1))
+        context = { "movies": movies_list, "query": f'Results for "{query}"', "is_full_page_list": True }
     else:
         limit = 18
-        trending_movies_list = list(movies.find({"quality": "TRENDING"}).sort('_id', -1).limit(limit))
-        latest_movies_list = list(movies.find({"type": "movie", "quality": {"$ne": "TRENDING"}, "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit))
-        latest_series_list = list(movies.find({"type": "series", "quality": {"$ne": "TRENDING"}, "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit))
-        coming_soon_movies_list = list(movies.find({"is_coming_soon": True}).sort('_id', -1).limit(limit))
-        recently_added_list = list(movies.find().sort('_id', -1).limit(limit))
+        context = {
+            "trending_movies": list(movies.find({"is_trending": True, "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit)),
+            "latest_movies": list(movies.find({"type": "movie", "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit)),
+            "latest_series": list(movies.find({"type": "series", "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit)),
+            "coming_soon_movies": list(movies.find({"is_coming_soon": True}).sort('_id', -1).limit(limit)),
+            "recently_added": list(movies.find({"is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit)),
+            "is_full_page_list": False, "query": ""
+        }
+    
+    for key, value in context.items():
+        if isinstance(value, list):
+            for item in value:
+                if '_id' in item: item['_id'] = str(item['_id'])
 
-    all_fetched_content = movies_list + trending_movies_list + latest_movies_list + latest_series_list + coming_soon_movies_list + recently_added_list
-    processed_ids = set()
-    for m in all_fetched_content:
-        # Check if this document has already been processed
-        if m['_id'] not in processed_ids:
-            # Convert ObjectId to string
-            m['_id'] = str(m['_id'])
-            # Add the (now string) ID to the set
-            processed_ids.add(m['_id'])
-
-    return render_template_string(
-        index_html, 
-        movies=movies_list, 
-        query=query,
-        trending_movies=trending_movies_list,
-        latest_movies=latest_movies_list,
-        latest_series=latest_series_list,
-        coming_soon_movies=coming_soon_movies_list,
-        recently_added=recently_added_list,
-        is_full_page_list=is_full_page_list
-    )
-
+    return render_template_string(index_html, **context)
 
 @app.route('/movie/<movie_id>')
 def movie_detail(movie_id):
     try:
-        movie = movies.find_one({"_id": ObjectId(movie_id)})
-        if movie:
-            movie['_id'] = str(movie['_id'])
-            
-            tmdb_search_type = "movie" if movie.get("type") == "movie" else "tv"
-            
-            should_fetch_tmdb = TMDB_API_KEY and (
-                not movie.get("tmdb_id") or 
-                movie.get("overview") == "No overview available." or 
-                not movie.get("poster")
-            )
+        movie_obj = movies.find_one({"_id": ObjectId(movie_id)})
+        if not movie_obj:
+            return "Content not found", 404
 
-            if should_fetch_tmdb:
-                tmdb_id = movie.get("tmdb_id")
-                
-                if not tmdb_id:
-                    search_url = f"https://api.themoviedb.org/3/search/{tmdb_search_type}?api_key={TMDB_API_KEY}&query={requests.utils.quote(movie['title'])}"
-                    try:
-                        search_res = requests.get(search_url, timeout=5).json()
-                        if search_res and search_res.get("results"):
-                            tmdb_id = search_res["results"][0].get("id")
-                            movies.update_one({"_id": ObjectId(movie_id)}, {"$set": {"tmdb_id": tmdb_id}})
-                        else:
-                            tmdb_id = None
-                    except requests.RequestException as e:
-                        print(f"TMDb search error: {e}")
-                        tmdb_id = None
+        movie = dict(movie_obj)
+        movie['_id'] = str(movie['_id'])
+        
+        # Check which fields are missing and need to be fetched
+        needs_poster = not movie.get("poster")
+        needs_overview = not movie.get("overview")
+        needs_release_date = not movie.get("release_date")
+        needs_genres = not movie.get("genres")
+        tmdb_id = movie.get("tmdb_id")
+        tmdb_type = "tv" if movie.get("type") == "series" else "movie"
+        
+        if (needs_poster or needs_overview or needs_release_date or needs_genres or not tmdb_id) and TMDB_API_KEY:
+            if not tmdb_id:
+                search_url = f"https://api.themoviedb.org/3/search/{tmdb_type}?api_key={TMDB_API_KEY}&query={requests.utils.quote(movie['title'])}"
+                try:
+                    search_res = requests.get(search_url, timeout=5).json()
+                    if search_res.get("results"):
+                        tmdb_id = search_res["results"][0].get("id")
+                except requests.RequestException as e:
+                    print(f"TMDb search error for '{movie['title']}': {e}")
 
-                if tmdb_id:
-                    detail_url = f"https://api.themoviedb.org/3/{tmdb_search_type}/{tmdb_id}?api_key={TMDB_API_KEY}"
-                    try:
-                        res = requests.get(detail_url, timeout=5).json()
-                        update_fields = {}
-                        
-                        if movie.get("overview") == "No overview available." and res.get("overview"):
-                            update_fields["overview"] = movie["overview"] = res["overview"]
-                        if not movie.get("poster") and res.get("poster_path"):
-                            update_fields["poster"] = movie["poster"] = f"https://image.tmdb.org/t/p/w500{res['poster_path']}"
-                        
-                        if tmdb_search_type == "movie":
-                            release_date = res.get("release_date")
-                            if release_date:
-                                update_fields["year"] = movie["year"] = release_date[:4]
-                                update_fields["release_date"] = movie["release_date"] = release_date
-                        else: # tv series
-                            first_air_date = res.get("first_air_date")
-                            if first_air_date:
-                                update_fields["year"] = movie["year"] = first_air_date[:4]
-                                update_fields["release_date"] = movie["release_date"] = first_air_date
-                        
-                        if res.get("vote_average"):
-                            update_fields["vote_average"] = movie["vote_average"] = res["vote_average"]
-                        if not movie.get("genres") and res.get("genres"):
-                            update_fields["genres"] = movie["genres"] = [g['name'] for g in res['genres']]
-                        
-                        if update_fields:
-                            movies.update_one({"_id": ObjectId(movie_id)}, {"$set": update_fields})
-                            
-                    except requests.RequestException as e:
-                        print(f"TMDb detail fetch error: {e}")
+            if tmdb_id:
+                detail_url = f"https://api.themoviedb.org/3/{tmdb_type}/{tmdb_id}?api_key={TMDB_API_KEY}"
+                try:
+                    res = requests.get(detail_url, timeout=5).json()
+                    update_fields = {"tmdb_id": tmdb_id}
+                    
+                    if needs_poster and res.get("poster_path"): 
+                        update_fields["poster"] = movie["poster"] = f"https://image.tmdb.org/t/p/w500{res['poster_path']}"
+                    if needs_overview and res.get("overview"): 
+                        update_fields["overview"] = movie["overview"] = res["overview"]
+                    if res.get("vote_average"): 
+                        update_fields["vote_average"] = movie["vote_average"] = res.get("vote_average")
+                    if needs_release_date:
+                        release_date = res.get("release_date") if tmdb_type == "movie" else res.get("first_air_date")
+                        if release_date: update_fields["release_date"] = movie["release_date"] = release_date
+                    if needs_genres and res.get("genres"):
+                         update_fields["genres"] = movie["genres"] = [g['name'] for g in res.get("genres", [])]
 
-        return render_template_string(detail_html, movie=movie)
+                    if len(update_fields) > 1: # Only update if new data was found
+                        movies.update_one({"_id": ObjectId(movie_id)}, {"$set": update_fields})
+                        print(f"Updated '{movie['title']}' with data from TMDb.")
+                except requests.RequestException as e:
+                    print(f"TMDb detail fetch error for '{movie['title']}': {e}")
+        
+        trailer_key = None
+        if tmdb_id:
+            video_url = f"https://api.themoviedb.org/3/{tmdb_type}/{tmdb_id}/videos?api_key={TMDB_API_KEY}"
+            try:
+                video_res = requests.get(video_url, timeout=5).json()
+                for v in video_res.get("results", []):
+                    if v['type'] == 'Trailer' and v['site'] == 'YouTube':
+                        trailer_key = v['key']; break
+            except requests.RequestException: pass
+        
+        return render_template_string(detail_html, movie=movie, trailer_key=trailer_key)
+        
     except Exception as e:
-        print(f"Error fetching movie detail: {e}")
-        return render_template_string(detail_html, movie=None)
+        print(f"Error in movie_detail: {e}")
+        return render_template_string(detail_html, movie=None, trailer_key=None)
+
+@app.route('/watch/<movie_id>')
+def watch_movie(movie_id):
+    try:
+        movie = movies.find_one({"_id": ObjectId(movie_id)})
+        if not movie: return "Content not found.", 404
+
+        watch_link = movie.get("watch_link")
+        title = movie.get("title")
+
+        episode_num = request.args.get('ep')
+        if episode_num and movie.get('type') == 'series' and movie.get('episodes'):
+            for ep in movie['episodes']:
+                if str(ep.get('episode_number')) == episode_num:
+                    watch_link = ep.get('watch_link')
+                    title = f"{title} - E{episode_num}: {ep.get('title')}"
+                    break
+        
+        if watch_link:
+            return render_template_string(watch_html, watch_link=watch_link, title=title)
+        return "Watch link not found for this content.", 404
+    except Exception as e:
+        print(f"Watch page error: {e}")
+        return "An error occurred.", 500
 
 @app.route('/admin', methods=["GET", "POST"])
 @requires_auth
 def admin():
     if request.method == "POST":
         content_type = request.form.get("content_type", "movie")
-        is_trending = request.form.get("is_trending") == "true"
-        quality_tag = "TRENDING" if is_trending else request.form.get("quality", "").upper()
-        
+        genres_raw = request.form.get("genres", "")
         movie_data = {
             "title": request.form.get("title"),
             "type": content_type,
-            "quality": quality_tag,
-            "top_label": request.form.get("top_label", ""),
-            "is_trending": is_trending,
+            "is_trending": request.form.get("is_trending") == "true",
             "is_coming_soon": request.form.get("is_coming_soon") == "true",
-            "overview": request.form.get("overview", "No overview available."),
-            "poster": request.form.get("poster_url", ""),
-            "year": request.form.get("year", "N/A"),
-            "original_language": request.form.get("original_language", "N/A"),
-            "genres": [g.strip() for g in request.form.get("genres", "").split(',') if g.strip()],
             "tmdb_id": None,
+            "poster": request.form.get("poster_url", "").strip(),
+            "overview": request.form.get("overview", "").strip(),
+            "release_date": request.form.get("release_date", "").strip(),
+            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()]
         }
 
-        # Handle links or episodes
         if content_type == "movie":
+            movie_data["watch_link"] = request.form.get("watch_link", "")
             links = []
-            if request.form.get("link_480p"): links.append({"quality": "480p", "size": "590MB", "url": request.form.get("link_480p")})
-            if request.form.get("link_720p"): links.append({"quality": "720p", "size": "1.4GB", "url": request.form.get("link_720p")})
-            if request.form.get("link_1080p"): links.append({"quality": "1080p", "size": "2.9GB", "url": request.form.get("link_1080p")})
+            if request.form.get("link_480p"): links.append({"quality": "480p", "url": request.form.get("link_480p")})
+            if request.form.get("link_720p"): links.append({"quality": "720p", "url": request.form.get("link_720p")})
+            if request.form.get("link_1080p"): links.append({"quality": "1080p", "url": request.form.get("link_1080p")})
             movie_data["links"] = links
-        else:
+        else: # series
             episodes = []
             ep_numbers = request.form.getlist('episode_number[]')
             for i in range(len(ep_numbers)):
                 ep_links = []
-                if request.form.getlist('episode_link_480p[]')[i]: ep_links.append({"quality": "480p", "size": "N/A", "url": request.form.getlist('episode_link_480p[]')[i]})
-                if request.form.getlist('episode_link_720p[]')[i]: ep_links.append({"quality": "720p", "size": "N/A", "url": request.form.getlist('episode_link_720p[]')[i]})
-                if request.form.getlist('episode_link_1080p[]')[i]: ep_links.append({"quality": "1080p", "size": "N/A", "url": request.form.getlist('episode_link_1080p[]')[i]})
+                if request.form.getlist('episode_link_480p[]')[i]: ep_links.append({"quality": "480p", "url": request.form.getlist('episode_link_480p[]')[i]})
+                if request.form.getlist('episode_link_720p[]')[i]: ep_links.append({"quality": "720p", "url": request.form.getlist('episode_link_720p[]')[i]})
                 episodes.append({
                     "episode_number": int(ep_numbers[i]),
                     "title": request.form.getlist('episode_title[]')[i],
-                    "overview": request.form.getlist('episode_overview[]')[i],
+                    "watch_link": request.form.getlist('episode_watch_link[]')[i],
                     "links": ep_links
                 })
             movie_data["episodes"] = episodes
-
-        try:
-            movies.insert_one(movie_data)
-        except Exception as e:
-            print(f"DB insert error: {e}")
-            
+        
+        movies.insert_one(movie_data)
         return redirect(url_for('admin'))
-
-    admin_query = request.args.get('q')
-    if admin_query:
-        all_content = list(movies.find({"title": {"$regex": admin_query, "$options": "i"}}).sort('_id', -1))
-    else:
-        all_content = list(movies.find().sort('_id', -1))
     
-    for content in all_content: content['_id'] = str(content['_id'])
-    return render_template_string(admin_html, movies=all_content, admin_query=admin_query)
+    all_content = list(movies.find().sort('_id', -1))
+    for m in all_content: m['_id'] = str(m['_id'])
+    return render_template_string(admin_html, movies=all_content)
 
 @app.route('/edit_movie/<movie_id>', methods=["GET", "POST"])
 @requires_auth
@@ -896,23 +944,24 @@ def edit_movie(movie_id):
 
     if request.method == "POST":
         content_type = request.form.get("content_type", "movie")
-        is_trending = request.form.get("is_trending") == "true"
-        quality_tag = "TRENDING" if is_trending else request.form.get("quality", "").upper()
-
+        genres_raw = request.form.get("genres", "")
         update_data = {
-            "title": request.form.get("title"), "type": content_type, "quality": quality_tag,
-            "top_label": request.form.get("top_label", ""), "is_coming_soon": request.form.get("is_coming_soon") == "true",
-            "overview": request.form.get("overview", "No overview available."), "poster": request.form.get("poster_url", ""),
-            "year": request.form.get("year", "N/A"), "original_language": request.form.get("original_language", "N/A"),
-            "genres": [g.strip() for g in request.form.get("genres", "").split(',') if g.strip()],
+            "title": request.form.get("title"),
+            "type": content_type,
+            "is_trending": request.form.get("is_trending") == "true",
+            "is_coming_soon": request.form.get("is_coming_soon") == "true",
+            "poster": request.form.get("poster_url", "").strip(),
+            "overview": request.form.get("overview", "").strip(),
+            "release_date": request.form.get("release_date", "").strip(),
+            "genres": [g.strip() for g in genres_raw.split(',') if g.strip()]
         }
-
-        # Unset old fields and set new ones based on type change
+        
         if content_type == "movie":
+            update_data["watch_link"] = request.form.get("watch_link", "")
             links = []
-            if request.form.get("link_480p"): links.append({"quality": "480p", "size": "590MB", "url": request.form.get("link_480p")})
-            if request.form.get("link_720p"): links.append({"quality": "720p", "size": "1.4GB", "url": request.form.get("link_720p")})
-            if request.form.get("link_1080p"): links.append({"quality": "1080p", "size": "2.9GB", "url": request.form.get("link_1080p")})
+            if request.form.get("link_480p"): links.append({"quality": "480p", "url": request.form.get("link_480p")})
+            if request.form.get("link_720p"): links.append({"quality": "720p", "url": request.form.get("link_720p")})
+            if request.form.get("link_1080p"): links.append({"quality": "1080p", "url": request.form.get("link_1080p")})
             update_data["links"] = links
             movies.update_one({"_id": ObjectId(movie_id)}, {"$unset": {"episodes": ""}})
         else: # series
@@ -920,19 +969,18 @@ def edit_movie(movie_id):
             ep_numbers = request.form.getlist('episode_number[]')
             for i in range(len(ep_numbers)):
                 ep_links = []
-                if request.form.getlist('episode_link_480p[]')[i]: ep_links.append({"quality": "480p", "size": "N/A", "url": request.form.getlist('episode_link_480p[]')[i]})
-                if request.form.getlist('episode_link_720p[]')[i]: ep_links.append({"quality": "720p", "size": "N/A", "url": request.form.getlist('episode_link_720p[]')[i]})
-                if request.form.getlist('episode_link_1080p[]')[i]: ep_links.append({"quality": "1080p", "size": "N/A", "url": request.form.getlist('episode_link_1080p[]')[i]})
+                if request.form.getlist('episode_link_480p[]')[i]: ep_links.append({"quality": "480p", "url": request.form.getlist('episode_link_480p[]')[i]})
+                if request.form.getlist('episode_link_720p[]')[i]: ep_links.append({"quality": "720p", "url": request.form.getlist('episode_link_720p[]')[i]})
                 episodes.append({
                     "episode_number": int(ep_numbers[i]), "title": request.form.getlist('episode_title[]')[i],
-                    "overview": request.form.getlist('episode_overview[]')[i], "links": ep_links
+                    "watch_link": request.form.getlist('episode_watch_link[]')[i], "links": ep_links
                 })
             update_data["episodes"] = episodes
-            movies.update_one({"_id": ObjectId(movie_id)}, {"$unset": {"links": ""}})
+            movies.update_one({"_id": ObjectId(movie_id)}, {"$unset": {"links": "", "watch_link": ""}})
         
         movies.update_one({"_id": ObjectId(movie_id)}, {"$set": update_data})
         return redirect(url_for('admin'))
-
+    
     movie_obj['_id'] = str(movie_obj['_id'])
     return render_template_string(edit_html, movie=movie_obj)
 
@@ -942,39 +990,32 @@ def delete_movie(movie_id):
     try:
         movies.delete_one({"_id": ObjectId(movie_id)})
     except Exception as e:
-        print(f"DB delete error: {e}")
+        print(f"Error deleting movie: {e}")
     return redirect(url_for('admin'))
 
 def render_full_list(content_list, title):
-    for m in content_list:
-        m['_id'] = str(m['_id'])
+    for m in content_list: m['_id'] = str(m['_id'])
     return render_template_string(index_html, movies=content_list, query=title, is_full_page_list=True)
 
 @app.route('/trending_movies')
 def trending_movies():
-    trending_list = list(movies.find({"quality": "TRENDING"}).sort('_id', -1))
-    return render_full_list(trending_list, "Trending Now")
+    return render_full_list(list(movies.find({"is_trending": True, "is_coming_soon": {"$ne": True}}).sort('_id', -1)), "Trending Now")
 
 @app.route('/movies_only')
 def movies_only():
-    movie_list = list(movies.find({"type": "movie", "is_coming_soon": {"$ne": True}}).sort('_id', -1))
-    return render_full_list(movie_list, "All Movies")
+    return render_full_list(list(movies.find({"type": "movie", "is_coming_soon": {"$ne": True}}).sort('_id', -1)), "All Movies")
 
 @app.route('/webseries')
 def webseries():
-    series_list = list(movies.find({"type": "series", "is_coming_soon": {"$ne": True}}).sort('_id', -1))
-    return render_full_list(series_list, "All Web Series")
+    return render_full_list(list(movies.find({"type": "series", "is_coming_soon": {"$ne": True}}).sort('_id', -1)), "All Web Series")
 
 @app.route('/coming_soon')
 def coming_soon():
-    coming_soon_list = list(movies.find({"is_coming_soon": True}).sort('_id', -1))
-    return render_full_list(coming_soon_list, "Coming Soon")
+    return render_full_list(list(movies.find({"is_coming_soon": True}).sort('_id', -1)), "Coming Soon")
 
 @app.route('/recently_added')
 def recently_added_all():
-    all_recent_content = list(movies.find().sort('_id', -1))
-    return render_full_list(all_recent_content, "Recently Added")
-
+    return render_full_list(list(movies.find({"is_coming_soon": {"$ne": True}}).sort('_id', -1)), "Recently Added")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
