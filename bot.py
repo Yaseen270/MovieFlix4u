@@ -52,7 +52,7 @@ except Exception as e:
     exit(1)
 
 
-# --- START OF index_html TEMPLATE ---
+# --- START OF index_html TEMPLATE (Hero Slider Updated) ---
 index_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -97,16 +97,38 @@ index_html = """
   }
   .search-input:focus { background-color: rgba(0,0,0,0.9); border-color: var(--text-light); outline: none; }
 
+  /* --- MODIFIED for Hero Slider --- */
   .hero-section {
-      height: 90vh; position: relative; display: flex; align-items: flex-end;
-      padding: 50px; background-size: cover; background-position: center top; color: white;
+      height: 90vh; position: relative; color: white;
+      overflow: hidden; /* Hide overflowing parts of slides */
   }
-  .hero-section::before {
+
+  /* --- NEW Hero Slide Style --- */
+  .hero-slide {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-size: cover;
+      background-position: center top;
+      display: flex;
+      align-items: flex-end;
+      padding: 50px;
+      opacity: 0; /* Hidden by default */
+      transition: opacity 1.5s ease-in-out; /* Slow fade transition */
+      z-index: 1;
+  }
+
+  .hero-slide.active {
+      opacity: 1; /* Visible */
+      z-index: 2;
+  }
+
+  .hero-slide::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       background: linear-gradient(to top, var(--netflix-black) 10%, transparent 50%),
                   linear-gradient(to right, rgba(0,0,0,0.8) 0%, transparent 60%);
   }
-  .hero-content { position: relative; z-index: 2; max-width: 50%; }
+
+  .hero-content { position: relative; z-index: 3; max-width: 50%; }
   .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; font-weight: 700; margin-bottom: 1rem; line-height: 1; }
   .hero-overview {
       font-size: 1.1rem; line-height: 1.5; margin-bottom: 1.5rem; max-width: 600px;
@@ -155,7 +177,6 @@ index_html = """
   }
   .movie-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
   
-  /* --- NEW --- Poster Badge Style */
   .poster-badge {
     position: absolute;
     top: 10px;
@@ -170,7 +191,6 @@ index_html = """
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
   }
 
-  /* --- NEW --- Card Hover Info Overlay */
   .card-info-overlay {
       position: absolute;
       bottom: 0;
@@ -228,12 +248,13 @@ index_html = """
   .nav-item.active .fa-home { color: var(--netflix-red); }
 
   @media (max-width: 768px) {
-      .card-info-overlay { display: none; } /* Disable complex hover on mobile */
+      .card-info-overlay { display: none; }
       body { padding-bottom: var(--nav-height); }
       .main-nav { padding: 10px 15px; }
       .logo { font-size: 24px; }
       .search-input { width: 150px; padding: 6px 10px; font-size: 14px; }
-      .hero-section { height: 60vh; padding: 15px; align-items: center; }
+      .hero-section { height: 60vh; } /* --- MODIFIED for Hero Slider --- */
+      .hero-slide { padding: 15px; align-items: center; } /* --- MODIFIED for Hero Slider --- */
       .hero-content { max-width: 90%; text-align: center; }
       .hero-title { font-size: 2.8rem; }
       .hero-overview { display: none; }
@@ -284,18 +305,25 @@ index_html = """
       {% endif %}
     </div>
   {% else %} {# Homepage with carousels #}
+    
+    <!-- --- MODIFIED Hero Section to be a Slider --- -->
     {% if trending_movies %}
-      <div class="hero-section" style="background-image: url('{{ trending_movies[0].poster or '' }}');">
-        <div class="hero-content">
-          <h1 class="hero-title">{{ trending_movies[0].title }}</h1>
-          <p class="hero-overview">{{ trending_movies[0].overview }}</p>
-          <div class="hero-buttons">
-             {% if trending_movies[0].watch_link %}
-                <a href="{{ url_for('watch_movie', movie_id=trending_movies[0]._id) }}" class="btn btn-primary"><i class="fas fa-play"></i> Watch Now</a>
-             {% endif %}
-            <a href="{{ url_for('movie_detail', movie_id=trending_movies[0]._id) }}" class="btn btn-secondary"><i class="fas fa-info-circle"></i> More Info</a>
+      <div class="hero-section">
+        {% for movie in trending_movies %}
+          <div class="hero-slide {% if loop.first %}active{% endif %}" 
+               style="background-image: url('{{ movie.poster or '' }}');">
+            <div class="hero-content">
+              <h1 class="hero-title">{{ movie.title }}</h1>
+              <p class="hero-overview">{{ movie.overview }}</p>
+              <div class="hero-buttons">
+                 {% if movie.watch_link %}
+                    <a href="{{ url_for('watch_movie', movie_id=movie._id) }}" class="btn btn-primary"><i class="fas fa-play"></i> Watch Now</a>
+                 {% endif %}
+                <a href="{{ url_for('movie_detail', movie_id=movie._id) }}" class="btn btn-secondary"><i class="fas fa-info-circle"></i> More Info</a>
+              </div>
+            </div>
           </div>
-        </div>
+        {% endfor %}
       </div>
     {% endif %}
 
@@ -349,6 +377,28 @@ index_html = """
             const scroll = carousel.clientWidth * 0.8;
             carousel.scrollLeft += button.classList.contains('next') ? scroll : -scroll;
         });
+    });
+
+    // --- NEW: JavaScript for Hero Slider ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const slides = document.querySelectorAll('.hero-slide');
+        if (slides.length > 1) {
+            let currentSlide = 0;
+            
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.remove('active');
+                    if (i === index) {
+                        slide.classList.add('active');
+                    }
+                });
+            }
+
+            setInterval(() => {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            }, 5000); // Change slide every 5000ms (5 seconds)
+        }
     });
 </script>
 </body>
