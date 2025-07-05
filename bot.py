@@ -46,7 +46,7 @@ try:
     client = MongoClient(MONGO_URI)
     db = client["movie_db"]
     movies = db["movies"]
-    # === নতুন সংযোজন: বিজ্ঞাপনের কোড সংরক্ষণের জন্য সেটিংস কালেকশন ===
+    # === বিজ্ঞাপন কোড সংরক্ষণের জন্য নতুন সেটিংস কালেকশন ===
     settings = db["settings"]
     print("Successfully connected to MongoDB!")
 except Exception as e:
@@ -54,8 +54,7 @@ except Exception as e:
     exit(1)
 
 
-# === নতুন সংযোজন: Context Processor ===
-# এই ফাংশনটি সব টেমপ্লেটে বিজ্ঞাপনের কোডগুলো সহজলভ্য করে দেবে।
+# === Context Processor: সমস্ত টেমপ্লেটে বিজ্ঞাপনের কোড সহজলভ্য করার জন্য ===
 @app.context_processor
 def inject_ads():
     ad_codes = settings.find_one()
@@ -256,13 +255,12 @@ index_html = """
   .nav-item.active { color: var(--text-light); }
   .nav-item.active .fa-home { color: var(--netflix-red); }
   
-  /* === নতুন সংযোজন: বিজ্ঞাপনের কন্টেইনার স্টাইল === */
+  /* === বিজ্ঞাপনের কন্টেইনার স্টাইল === */
   .ad-container {
       margin: 40px 50px;
       display: flex;
       justify-content: center;
       align-items: center;
-      /* আপনি এখানে বিজ্ঞাপনের আকার অনুযায়ী স্টাইল যোগ করতে পারেন */
   }
 
   @media (max-width: 768px) {
@@ -365,7 +363,7 @@ index_html = """
     
     {{ render_carousel('Trending Now', trending_movies, 'trending_movies') }}
     
-    <!-- === নতুন সংযোজন: ব্যানার বিজ্ঞাপন === -->
+    <!-- === ব্যানার বিজ্ঞাপন === -->
     {% if ad_settings.banner_ad_code %}
     <div class="ad-container">
         {{ ad_settings.banner_ad_code|safe }}
@@ -374,7 +372,7 @@ index_html = """
 
     {{ render_carousel('Latest Movies', latest_movies, 'movies_only') }}
     
-    <!-- === নতুন সংযোজন: নেটিভ ব্যানার বিজ্ঞাপন === -->
+    <!-- === নেটিভ ব্যানার বিজ্ঞাপন === -->
     {% if ad_settings.native_banner_code %}
     <div class="ad-container">
         {{ ad_settings.native_banner_code|safe }}
@@ -435,7 +433,7 @@ index_html = """
     });
 </script>
 
-<!-- === নতুন সংযোজন: Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
+<!-- === Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
 {% if ad_settings.popunder_code %}
     {{ ad_settings.popunder_code|safe }}
 {% endif %}
@@ -546,7 +544,7 @@ detail_html = """
   .episode-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
   .episode-overview-text { font-size: 0.9rem; color: var(--text-dark); margin-bottom: 10px; }
 
-  /* === নতুন সংযোজন: বিজ্ঞাপনের কন্টেইনার স্টাইল === */
+  /* === বিজ্ঞাপনের কন্টেইনার স্টাইল === */
   .ad-container {
       margin: 30px 0;
       text-align: center;
@@ -600,7 +598,7 @@ detail_html = """
         </a>
       {% endif %}
       
-      <!-- === নতুন সংযোজন: ব্যানার বিজ্ঞাপন (Watch Button এর নিচে) === -->
+      <!-- === ব্যানার বিজ্ঞাপন (Watch Button এর নিচে) === -->
       {% if ad_settings.banner_ad_code %}
       <div class="ad-container">
           {{ ad_settings.banner_ad_code|safe }}
@@ -616,7 +614,7 @@ detail_html = """
       </div>
       {% endif %}
 
-      <!-- === নতুন সংযোজন: নেটিভ ব্যানার বিজ্ঞাপন (Trailer এর নিচে) === -->
+      <!-- === নেটিভ ব্যানার বিজ্ঞাপন (Trailer এর নিচে) === -->
       {% if ad_settings.native_banner_code %}
       <div class="ad-container">
           {{ ad_settings.native_banner_code|safe }}
@@ -669,7 +667,7 @@ function copyToClipboard(text) {
 }
 </script>
 
-<!-- === নতুন সংযোজন: Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
+<!-- === Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
 {% if ad_settings.popunder_code %}
     {{ ad_settings.popunder_code|safe }}
 {% endif %}
@@ -709,8 +707,7 @@ watch_html = """
         </iframe>
     </div>
 
-    <!-- === নতুন সংযোজন: Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
-    <!-- এই পেজে ব্যানার বিজ্ঞাপন না দেওয়াই ভালো কারণ এটি প্লেয়ারকে ঢাকতে পারে -->
+    <!-- === Pop-under এবং Social Bar বিজ্ঞাপনের জন্য স্ক্রিপ্ট === -->
     {% if ad_settings.popunder_code %}
         {{ ad_settings.popunder_code|safe }}
     {% endif %}
@@ -772,7 +769,7 @@ admin_html = """
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- === নতুন সংযোজন: বিজ্ঞাপন ম্যানেজমেন্ট সেকশন === -->
+  <!-- === বিজ্ঞাপন ম্যানেজমেন্ট সেকশন === -->
   <h2>বিজ্ঞাপন পরিচালনা (Ad Management)</h2>
   <form action="{{ url_for('save_ads') }}" method="post">
     <div class="form-group">
@@ -876,11 +873,119 @@ admin_html = """
 # --- END OF admin_html TEMPLATE ---
 
 
-# edit_html template is unchanged, so I'm omitting it for brevity.
-# It will work correctly without any changes.
+# --- START OF edit_html TEMPLATE ---
 edit_html = """
-... (your existing edit_html code) ...
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Content - MovieZone</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --netflix-red: #E50914; --netflix-black: #141414;
+      --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5;
+    }
+    body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; }
+    h2, h3 { font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red); }
+    h2 { font-size: 2.5rem; margin-bottom: 20px; }
+    h3 { font-size: 1.5rem; margin: 20px 0 10px 0;}
+    form { max-width: 800px; margin: 0 auto 40px auto; background: var(--dark-gray); padding: 25px; border-radius: 8px;}
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; }
+    input, textarea, select {
+      width: 100%; padding: 12px; border-radius: 4px; border: 1px solid var(--light-gray);
+      font-size: 1rem; background: var(--light-gray); color: var(--text-light); box-sizing: border-box;
+    }
+    input[type="checkbox"] { width: auto; margin-right: 10px; transform: scale(1.2); }
+    textarea { resize: vertical; min-height: 100px; }
+    button[type="submit"], .add-episode-btn {
+      background: var(--netflix-red); color: white; font-weight: 700; cursor: pointer;
+      border: none; padding: 12px 25px; border-radius: 4px; font-size: 1rem;
+      transition: background 0.3s ease;
+    }
+    button[type="submit"]:hover, .add-episode-btn:hover { background: #b00710; }
+    .back-to-admin { display: inline-block; margin-bottom: 20px; color: var(--netflix-red); text-decoration: none; font-weight: bold; }
+    .episode-item { border: 1px solid var(--light-gray); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+    .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <a href="{{ url_for('admin') }}" class="back-to-admin">← Back to Admin</a>
+  <h2>Edit: {{ movie.title }}</h2>
+  <form method="post">
+    <div class="form-group"><label>Title:</label><input type="text" name="title" value="{{ movie.title }}" required /></div>
+    <div class="form-group"><label>Content Type:</label><select name="content_type" id="content_type" onchange="toggleEpisodeFields()">
+        <option value="movie" {% if movie.type == 'movie' %}selected{% endif %}>Movie</option>
+        <option value="series" {% if movie.type == 'series' %}selected{% endif %}>TV/Web Series</option>
+    </select></div>
+
+    <div id="movie_fields">
+        <div class="form-group"><label>Watch Link (Embed URL):</label><input type="url" name="watch_link" value="{{ movie.watch_link or '' }}" /></div>
+        <hr><p style="text-align:center; font-weight:bold;">OR Download Links</p>
+        <div class="form-group"><label>480p Link:</label><input type="url" name="link_480p" value="{% for l in movie.links %}{% if l.quality == '480p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
+        <div class="form-group"><label>720p Link:</label><input type="url" name="link_720p" value="{% for l in movie.links %}{% if l.quality == '720p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
+        <div class="form-group"><label>1080p Link:</label><input type="url" name="link_1080p" value="{% for l in movie.links %}{% if l.quality == '1080p' %}{{ l.url }}{% endif %}{% endfor %}" /></div>
+    </div>
+
+    <div id="episode_fields" style="display: none;">
+        <h3>Episodes</h3><div id="episodes_container">
+        {% if movie.type == 'series' and movie.episodes %}{% for ep in movie.episodes %}
+        <div class="episode-item">
+            <div class="form-group"><label>Ep Number:</label><input type="number" name="episode_number[]" value="{{ ep.episode_number }}" required /></div>
+            <div class="form-group"><label>Ep Title:</label><input type="text" name="episode_title[]" value="{{ ep.title }}" required /></div>
+            <div class="form-group"><label>Watch Link (Embed):</label><input type="url" name="episode_watch_link[]" value="{{ ep.watch_link or '' }}" /></div>
+            <hr><p>OR Download Links</p>
+            <div class="form-group"><label>480p Link:</label><input type="url" name="episode_link_480p[]" value="{% for l in ep.links %}{% if l.quality=='480p'%}{{l.url}}{%endif%}{%endfor%}" /></div>
+            <div class="form-group"><label>720p Link:</label><input type="url" name="episode_link_720p[]" value="{% for l in ep.links %}{% if l.quality=='720p'%}{{l.url}}{%endif%}{%endfor%}" /></div>
+            <button type="button" onclick="this.parentElement.remove()" class="delete-btn">Remove Ep</button>
+        </div>
+        {% endfor %}{% endif %}
+        </div>
+        <button type="button" onclick="addEpisodeField()" class="add-episode-btn">Add Episode</button>
+    </div>
+
+    <hr style="border-color: #333; margin: 20px 0;">
+    <h3>Manual Details (Update or leave blank for auto-fetch)</h3>
+    <div class="form-group"><label>Poster URL:</label><input type="url" name="poster_url" value="{{ movie.poster or '' }}" /></div>
+    <div class="form-group"><label>Overview:</label><textarea name="overview">{{ movie.overview or '' }}</textarea></div>
+    <div class="form-group"><label>Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" value="{{ movie.release_date or '' }}" /></div>
+    <div class="form-group"><label>Genres (Comma-separated):</label><input type="text" name="genres" value="{{ movie.genres|join(', ') if movie.genres else '' }}" /></div>
+    <div class="form-group"><label>Poster Badge:</label><input type="text" name="poster_badge" value="{{ movie.poster_badge or '' }}" /></div>
+
+
+    <hr style="border-color: #333; margin: 20px 0;">
+    <div class="form-group"><input type="checkbox" name="is_trending" value="true" {% if movie.is_trending %}checked{% endif %}><label style="display: inline-block;">Is Trending?</label></div>
+    <div class="form-group"><input type="checkbox" name="is_coming_soon" value="true" {% if movie.is_coming_soon %}checked{% endif %}><label style="display: inline-block;">Is Coming Soon?</label></div>
+    <button type="submit">Update Content</button>
+  </form>
+  <script>
+    function toggleEpisodeFields() {
+        var isSeries = document.getElementById('content_type').value === 'series';
+        document.getElementById('episode_fields').style.display = isSeries ? 'block' : 'none';
+        document.getElementById('movie_fields').style.display = isSeries ? 'none' : 'block';
+    }
+    function addEpisodeField() {
+        const container = document.getElementById('episodes_container');
+        const div = document.createElement('div');
+        div.className = 'episode-item';
+        div.innerHTML = `
+            <div class="form-group"><label>Ep Number:</label><input type="number" name="episode_number[]" required /></div>
+            <div class="form-group"><label>Ep Title:</label><input type="text" name="episode_title[]" required /></div>
+            <div class="form-group"><label>Watch Link (Embed):</label><input type="url" name="episode_watch_link[]" /></div>
+            <hr><p>OR Download Links</p>
+            <div class="form-group"><label>480p Link:</label><input type="url" name="episode_link_480p[]" /></div>
+            <div class="form-group"><label>720p Link:</label><input type="url" name="episode_link_720p[]" /></div>
+            <button type="button" onclick="this.parentElement.remove()" class="delete-btn">Remove Ep</button>
+        `;
+        container.appendChild(div);
+    }
+    document.addEventListener('DOMContentLoaded', toggleEpisodeFields);
+  </script>
+</body></html>
 """
+# --- END OF edit_html TEMPLATE ---
+
 
 # ----------------- Flask Routes (আপডেট করা হয়েছে) -----------------
 
@@ -1045,15 +1150,13 @@ def admin():
         movies.insert_one(movie_data)
         return redirect(url_for('admin'))
     
-    # অ্যাডমিন টেমপ্লেটের জন্য সব কনটেন্ট এবং বিজ্ঞাপন সেটিংস পাস করা হচ্ছে
+    # অ্যাডমিন টেমপ্লেটের জন্য সব কনটেন্ট পাস করা হচ্ছে
     all_content = list(movies.find().sort('_id', -1))
     for m in all_content: m['_id'] = str(m['_id'])
-    # ad_settings context processor থেকে স্বয়ংক্রিয়ভাবে পাস হবে, কিন্তু এখানেও পাস করা যেতে পারে।
-    ad_settings = settings.find_one() or {}
-    return render_template_string(admin_html, all_content=all_content, ad_settings=ad_settings)
+    # ad_settings context processor থেকে স্বয়ংক্রিয়ভাবে পাস হবে, তাই এখানে আলাদা করে পাস করার দরকার নেই।
+    return render_template_string(admin_html, all_content=all_content)
 
-
-# === নতুন সংযোজন: বিজ্ঞাপন কোড সেভ করার জন্য রুট ===
+# === নতুন রুট: বিজ্ঞাপন কোড সেভ করার জন্য ===
 @app.route('/admin/save_ads', methods=['POST'])
 @requires_auth
 def save_ads():
@@ -1066,7 +1169,6 @@ def save_ads():
     # upsert=True ব্যবহার করে ডেটাবেসে ডেটা আপডেট বা ইনসার্ট করা হচ্ছে
     settings.update_one({}, {"$set": ad_codes}, upsert=True)
     return redirect(url_for('admin'))
-
 
 @app.route('/edit_movie/<movie_id>', methods=["GET", "POST"])
 @requires_auth
@@ -1151,10 +1253,4 @@ def recently_added_all():
     return render_full_list(list(movies.find({"is_coming_soon": {"$ne": True}}).sort('_id', -1)), "Recently Added")
 
 if __name__ == "__main__":
-    # edit_html কোডটি এখানে যোগ করতে ভুলবেন না, যদি এটি অন্য কোনো ফাইলে না থাকে।
-    # For now, I'm assuming it's available in the scope.
-    if 'edit_html' not in globals():
-        # This is a placeholder. You should copy your actual edit_html here.
-        edit_html = "<html><body><h1>Edit Page Placeholder</h1><p>Please paste your edit_html template code into the script.</p></body></html>"
-
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
