@@ -52,7 +52,7 @@ except Exception as e:
     exit(1)
 
 
-# --- START OF index_html TEMPLATE (Hero Slider Updated) ---
+# --- START OF index_html TEMPLATE (Hero Slider source changed to 'recently_added') ---
 index_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -97,13 +97,11 @@ index_html = """
   }
   .search-input:focus { background-color: rgba(0,0,0,0.9); border-color: var(--text-light); outline: none; }
 
-  /* --- MODIFIED for Hero Slider --- */
   .hero-section {
       height: 90vh; position: relative; color: white;
-      overflow: hidden; /* Hide overflowing parts of slides */
+      overflow: hidden;
   }
 
-  /* --- NEW Hero Slide Style --- */
   .hero-slide {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -112,13 +110,13 @@ index_html = """
       display: flex;
       align-items: flex-end;
       padding: 50px;
-      opacity: 0; /* Hidden by default */
-      transition: opacity 1.5s ease-in-out; /* Slow fade transition */
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
       z-index: 1;
   }
 
   .hero-slide.active {
-      opacity: 1; /* Visible */
+      opacity: 1;
       z-index: 2;
   }
 
@@ -253,8 +251,8 @@ index_html = """
       .main-nav { padding: 10px 15px; }
       .logo { font-size: 24px; }
       .search-input { width: 150px; padding: 6px 10px; font-size: 14px; }
-      .hero-section { height: 60vh; } /* --- MODIFIED for Hero Slider --- */
-      .hero-slide { padding: 15px; align-items: center; } /* --- MODIFIED for Hero Slider --- */
+      .hero-section { height: 60vh; }
+      .hero-slide { padding: 15px; align-items: center; }
       .hero-content { max-width: 90%; text-align: center; }
       .hero-title { font-size: 2.8rem; }
       .hero-overview { display: none; }
@@ -306,10 +304,10 @@ index_html = """
     </div>
   {% else %} {# Homepage with carousels #}
     
-    <!-- --- MODIFIED Hero Section to be a Slider --- -->
-    {% if trending_movies %}
+    <!-- === MODIFIED: Hero Slider now uses 'recently_added' instead of 'trending_movies' === -->
+    {% if recently_added %}
       <div class="hero-section">
-        {% for movie in trending_movies %}
+        {% for movie in recently_added %}
           <div class="hero-slide {% if loop.first %}active{% endif %}" 
                style="background-image: url('{{ movie.poster or '' }}');">
             <div class="hero-content">
@@ -379,7 +377,6 @@ index_html = """
         });
     });
 
-    // --- NEW: JavaScript for Hero Slider ---
     document.addEventListener('DOMContentLoaded', function() {
         const slides = document.querySelectorAll('.hero-slide');
         if (slides.length > 1) {
@@ -715,7 +712,6 @@ admin_html = """
     <div class="form-group"><label for="overview">Overview:</label><textarea name="overview" id="overview"></textarea></div>
     <div class="form-group"><label for="release_date">Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" id="release_date" /></div>
     <div class="form-group"><label for="genres">Genres (Comma-separated):</label><input type="text" name="genres" id="genres" /></div>
-    <!-- NEW Field for Poster Badge -->
     <div class="form-group"><label for="poster_badge">Poster Badge (e.g., Trending, 4K):</label><input type="text" name="poster_badge" id="poster_badge" /></div>
 
     <hr style="border-color: #333; margin: 20px 0;">
@@ -846,7 +842,6 @@ edit_html = """
     <div class="form-group"><label>Overview:</label><textarea name="overview">{{ movie.overview or '' }}</textarea></div>
     <div class="form-group"><label>Release Date (YYYY-MM-DD):</label><input type="text" name="release_date" value="{{ movie.release_date or '' }}" /></div>
     <div class="form-group"><label>Genres (Comma-separated):</label><input type="text" name="genres" value="{{ movie.genres|join(', ') if movie.genres else '' }}" /></div>
-    <!-- NEW Field for Poster Badge -->
     <div class="form-group"><label>Poster Badge:</label><input type="text" name="poster_badge" value="{{ movie.poster_badge or '' }}" /></div>
 
 
@@ -1019,7 +1014,7 @@ def admin():
             "overview": request.form.get("overview", "").strip(),
             "release_date": request.form.get("release_date", "").strip(),
             "genres": [g.strip() for g in genres_raw.split(',') if g.strip()],
-            "poster_badge": request.form.get("poster_badge", "").strip() # NEW: Save badge
+            "poster_badge": request.form.get("poster_badge", "").strip()
         }
 
         if content_type == "movie":
@@ -1069,7 +1064,7 @@ def edit_movie(movie_id):
             "overview": request.form.get("overview", "").strip(),
             "release_date": request.form.get("release_date", "").strip(),
             "genres": [g.strip() for g in genres_raw.split(',') if g.strip()],
-            "poster_badge": request.form.get("poster_badge", "").strip() # NEW: Update badge
+            "poster_badge": request.form.get("poster_badge", "").strip()
         }
         
         if content_type == "movie":
