@@ -146,8 +146,12 @@ index_html = """
       display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
   .hero-buttons .btn {
-      padding: 10px 25px; margin-right: 1rem; border: none; border-radius: 4px;
-      font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.3s ease;
+      padding: 8px 20px; /* MODIFIED: Made smaller */
+      margin-right: 0.8rem; /* MODIFIED: Adjusted margin */
+      border: none; border-radius: 4px;
+      font-size: 0.9rem; /* MODIFIED: Made smaller */
+      font-weight: 700; cursor: pointer; transition: opacity 0.3s ease;
+      display: inline-flex; align-items: center; gap: 8px;
   }
   .btn.btn-primary { background-color: var(--netflix-red); color: white; }
   .btn.btn-secondary { background-color: rgba(109, 109, 110, 0.7); color: white; }
@@ -893,7 +897,7 @@ def home():
     all_badges = movies.distinct("poster_badge")
     all_badges = sorted([badge for badge in all_badges if badge])
 
-    limit = 18
+    limit = 12 # MODIFIED: Changed from 18 to 12
     context = {
         "trending_movies": process_movie_list(list(movies.find({"is_trending": True, "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit))),
         "latest_movies": process_movie_list(list(movies.find({"type": "movie", "is_coming_soon": {"$ne": True}}).sort('_id', -1).limit(limit))),
