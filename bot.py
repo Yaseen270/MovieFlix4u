@@ -293,7 +293,7 @@ index_html = """
 </head>
 <body>
 <header class="main-nav">
-  <a href="{{ url_for('home') }}" class="logo">MovieZone</a>
+  <a href="{{ url_for('home') }}" class="logo">MovieFlix9u</a>
   <form method="GET" action="/" class="search-form">
     <input type="search" name="q" class="search-input" placeholder="Search..." value="{{ query|default('') }}" />
   </form>
