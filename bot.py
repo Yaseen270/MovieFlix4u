@@ -71,7 +71,7 @@ index_html = """
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>MovieZone - Your Entertainment Hub</title>
+<title>MovieFlix9u - Your Entertainment Hub</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500;700&display=swap');
   :root {
@@ -367,7 +367,7 @@ index_html = """
         <i class="fa-brands fa-telegram telegram-icon"></i>
         <h2>Join Our Telegram Channel</h2>
         <p>Get the latest movie updates, news, and direct download links right on your phone!</p>
-        <a href="https://t.me/+60goZWp-FpkxNzVl" target="_blank" class="telegram-join-button">
+        <a href="https://t.me/MovieFlix9u" target="_blank" class="telegram-join-button">
             <i class="fa-brands fa-telegram"></i> Join Main Channel
         </a>
     </div>
@@ -416,7 +416,7 @@ genres_html = """
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>{{ title }} - MovieZone</title>
+<title>{{ title }} - MovieFlix9u</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500;700&display=swap');
   :root { --netflix-red: #E50914; --netflix-black: #141414; --text-light: #f5f5f5; --text-dark: #a0a0a0; }
@@ -485,7 +485,7 @@ detail_html = """
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>{{ movie.title if movie else "Content Not Found" }} - MovieZone</title>
+<title>{{ movie.title if movie else "Content Not Found" }} - MovieFlix9u</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500;700&display=swap');
   :root { --netflix-red: #E50914; --netflix-black: #141414; --text-light: #f5f5f5; --text-dark: #a0a0a0; }
@@ -642,7 +642,7 @@ admin_html = """
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Panel - MovieZone</title><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel - MovieFlix9u</title><meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --netflix-red: #E50914; --netflix-black: #141414; --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5; }
     body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; }
@@ -725,7 +725,7 @@ edit_html = """
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Edit Content - MovieZone</title><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Content - MovieFlix9u</title><meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --netflix-red: #E50914; --netflix-black: #141414; --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5; }
     body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; }
@@ -796,7 +796,7 @@ contact_html = """
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contact Us / Report - MovieZone</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contact Us / Report - MovieFlix9u</title>
     <style>
         :root { --netflix-red: #E50914; --netflix-black: #141414; --dark-gray: #222; --light-gray: #333; --text-light: #f5f5f5; }
         body { font-family: 'Roboto', sans-serif; background: var(--netflix-black); color: var(--text-light); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
